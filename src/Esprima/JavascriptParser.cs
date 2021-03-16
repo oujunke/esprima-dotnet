@@ -6,6 +6,12 @@ using static Esprima.EsprimaExceptionHelper;
 
 namespace Esprima
 {
+    /// <summary>
+    /// Provides JavaScript parsing capabilities.
+    /// </summary>
+    /// <remarks>
+    /// Use the <see cref="ParseScript" />, <see cref="ParseModule" /> or <see cref="ParseExpression" /> methods to parse the JavaScript code.
+    /// </remarks>
     public class JavaScriptParser
     {
         private static readonly HashSet<string> AssignmentOperators = new HashSet<string>
@@ -58,9 +64,17 @@ namespace Esprima
         private bool _hasLineTerminator;
         private readonly Action<Node>? _action;
 
-        internal List<Token> Tokens = new List<Token>();
+        private List<Token> _tokens = new List<Token>();
 
-        // cache frequently called funcs so we don't need to build Func<T> intances all the time
+        /// <summary>
+        /// Returns the list of tokens that were parsed.
+        /// </summary>
+        /// <remarks>
+        /// It requires the parser options to be configured to generate to tokens.
+        /// </remarks>
+        public IReadOnlyList<Token> Tokens => _tokens;
+
+        // cache frequently called Func so we don't need to build Func<T> instances all the time
         private readonly Func<Expression> parseAssignmentExpression;
         private readonly Func<Expression> parseExponentiationExpression;
         private readonly Func<Expression> parseUnaryExpression;
@@ -75,14 +89,30 @@ namespace Esprima
         private readonly Func<Expression> parseLeftHandSideExpressionAllowCall;
         private readonly Func<Statement> parseStatement;
 
+        /// <summary>
+        /// Creates a new <see cref="JavaScriptParser" /> instance.
+        /// </summary>
+        /// <param name="code">The JavaScript code to parse.</param>
         public JavaScriptParser(string code) : this(code, new ParserOptions())
         {
         }
 
+        /// <summary>
+        /// Creates a new <see cref="JavaScriptParser" /> instance.
+        /// </summary>
+        /// <param name="code">The JavaScript code to parse.</param>
+        /// <param name="options">The parser options.</param>
+        /// <returns></returns>
         public JavaScriptParser(string code, ParserOptions options) : this(code, options, null)
         {
         }
 
+        /// <summary>
+        /// Creates a new <see cref="JavaScriptParser" /> instance.
+        /// </summary>
+        /// <param name="code">The JavaScript code to parse.</param>
+        /// <param name="options">The parser options.</param>
+        /// <param name="action">Action to execute on each parsed node.</param>
         public JavaScriptParser(string code, ParserOptions options, Action<Node>? action)
         {
             if (code == null)
@@ -144,6 +174,9 @@ namespace Esprima
         // https://tc39.github.io/ecma262/#sec-scripts
         // https://tc39.github.io/ecma262/#sec-modules
 
+        /// <summary>
+        /// Parses the code as a JavaScript module.
+        /// </summary>
         public Module ParseModule()
         {
             _context.Strict = true;
@@ -160,6 +193,9 @@ namespace Esprima
             return Finalize(node, new Module(NodeList.From(ref body)));
         }
 
+        /// <summary>
+        /// Parses the code as a JavaScript script.
+        /// </summary>
         public Script ParseScript(bool strict = false)
         {
             if (strict)
@@ -195,17 +231,9 @@ namespace Esprima
                         var node = new Comment();
                         node.Type = e.MultiLine ? CommentType.Block : CommentType.Line;
                         node.Value = _scanner.Source.Slice(e.Slice[0], e.Slice[1]);
-
-                        if (_config.Range)
-                        {
-                            node.Start = e.Start;
-                            node.End = e.End;
-                        }
-
-                        if (_config.Loc)
-                        {
-                            node.Loc = e.Loc;
-                        }
+                        node.Start = e.Start;
+                        node.End = e.End;
+                        node.Loc = e.Loc;
                     };
                 }
             }
@@ -226,29 +254,15 @@ namespace Esprima
             t = new Token
             {
                 Type = token.Type,
-                Value = GetTokenRaw(token)
+                Value = GetTokenRaw(token),
+                Start = token.Start,
+                End = token.End
             };
 
-            if (_config.Range)
-            {
-                t.Start = token.Start;
-                t.End = token.End;
-            }
+            var start = new Position(_startMarker.Line, _startMarker.Column);
+            var end = new Position(_scanner.LineNumber, _scanner.Index - _scanner.LineStart);
 
-            if (_config.Loc)
-            {
-                var start = new Position(
-                    _startMarker.Line,
-                    _startMarker.Column
-                );
-
-                var end = new Position(
-                    _scanner.LineNumber,
-                    _scanner.Index - _scanner.LineStart
-                );
-
-                t.Location = t.Location.WithPosition(start, end);
-            }
+            t.Location = t.Location.WithPosition(start, end);
 
             if (token.RegexValue != null)
             {
@@ -291,7 +305,7 @@ namespace Esprima
 
             if (_config.Tokens && next != null && next.Type != TokenType.EOF)
             {
-                Tokens.Add(ConvertToken(next));
+                _tokens.Add(ConvertToken(next));
             }
 
             return token!;
@@ -307,9 +321,9 @@ namespace Esprima
             {
                 // Pop the previous token, '/' or '/='
                 // This is added from the lookahead token.
-                Tokens.RemoveAt(Tokens.Count - 1);
+                _tokens.RemoveAt(_tokens.Count - 1);
 
-                Tokens.Add(ConvertToken(token));
+                _tokens.Add(ConvertToken(token));
             }
 
             // Prime the next lookahead.
@@ -340,18 +354,12 @@ namespace Esprima
 
         private T Finalize<T>(Marker marker, T node) where T : Node
         {
-            if (_config.Range)
-            {
-                node.Range = new Range(marker.Index, _lastMarker.Index);
-            }
+            node.Range = new Range(marker.Index, _lastMarker.Index);
 
-            if (_config.Loc)
-            {
-                var start = new Position(marker.Line, marker.Column);
-                var end   = new Position(_lastMarker.Line, _lastMarker.Column);
+            var start = new Position(marker.Line, marker.Column);
+            var end = new Position(_lastMarker.Line, _lastMarker.Column);
 
-                node.Location = new Location(start, end, _errorHandler.Source);
-            }
+            node.Location = new Location(start, end, _errorHandler.Source);
 
             _action?.Invoke(node);
 
@@ -688,8 +696,6 @@ namespace Esprima
         /// <summary>
         /// Return true if provided expression is LeftHandSideExpression
         /// </summary>
-        /// <param name="expr"></param>
-        /// <returns></returns>
         private bool IsLeftHandSide(Expression expr)
         {
             return expr.Type == Nodes.Identifier || expr.Type == Nodes.MemberExpression;
@@ -1103,7 +1109,7 @@ namespace Esprima
                     var newArgument = ReinterpretExpressionAsPattern(expr.As<SpreadElement>().Argument);
                     node = new RestElement(newArgument);
                     node.Range = expr.Range;
-                    node.Location = _config.Loc ? expr.Location : default;
+                    node.Location = expr.Location;
                     break;
                 case Nodes.ArrayExpression:
                     var elements = new ArrayList<Expression?>();
@@ -1125,7 +1131,7 @@ namespace Esprima
                     node = new ArrayPattern(NodeList.From(ref elements));
 #nullable enable
                     node.Range = expr.Range;
-                    node.Location = _config.Loc ? expr.Location : default;
+                    node.Location = expr.Location;
 
                     break;
                 case Nodes.ObjectExpression:
@@ -1144,14 +1150,14 @@ namespace Esprima
                     }
                     node = new ObjectPattern(NodeList.From(ref properties));
                     node.Range = expr.Range;
-                    node.Location = _config.Loc ? expr.Location : default;
+                    node.Location = expr.Location;
 
                     break;
                 case Nodes.AssignmentExpression:
                     var assignmentExpression = expr.As<AssignmentExpression>();
                     node = new AssignmentPattern(assignmentExpression.Left, assignmentExpression.Right);
                     node.Range = expr.Range;
-                    node.Location = _config.Loc ? expr.Location : default;
+                    node.Location = expr.Location;
 
                     break;
                 default:
@@ -1725,7 +1731,6 @@ namespace Esprima
 
             if (token.Type == TokenType.Punctuator)
             {
-
                 switch ((string?) op)
                 {
                     case ")":
@@ -1736,55 +1741,59 @@ namespace Esprima
                         prec = 0;
                         break;
 
+                    case "??":
+                        prec = 5;
+                        break;
+
                     case "||":
-                        prec = 1;
+                        prec = 6;
                         break;
 
                     case "&&":
-                        prec = 2;
+                        prec = 7;
                         break;
 
                     case "|":
-                        prec = 3;
+                        prec = 8;
                         break;
 
                     case "^":
-                        prec = 4;
+                        prec = 9;
                         break;
 
                     case "&":
-                        prec = 5;
+                        prec = 10;
                         break;
 
                     case "==":
                     case "!=":
                     case "===":
                     case "!==":
-                        prec = 6;
+                        prec = 11;
                         break;
 
                     case "<":
                     case ">":
                     case "<=":
                     case ">=":
-                        prec = 7;
+                        prec = 12;
                         break;
 
                     case "<<":
                     case ">>":
                     case ">>>":
-                        prec = 8;
+                        prec = 13;
                         break;
 
                     case "+":
                     case "-":
-                        prec = 9;
+                        prec = 14;
                         break;
 
                     case "*":
                     case "/":
                     case "%":
-                        prec = 11;
+                        prec = 15;
                         break;
 
                     default:
@@ -1794,7 +1803,7 @@ namespace Esprima
             }
             else if (token.Type == TokenType.Keyword)
             {
-                prec = ("instanceof".Equals(op) || (_context.AllowIn && "in".Equals(op))) ? 7 : 0;
+                prec = ("instanceof".Equals(op) || (_context.AllowIn && "in".Equals(op))) ? 12 : 0;
             }
 
             return prec;
@@ -1806,10 +1815,25 @@ namespace Esprima
 
             var expr = InheritCoverGrammar(parseExponentiationExpression);
 
+            var allowAndOr = true;
+            var allowNullishCoalescing = true;
+            void UpdateNullishCoalescingRestrictions(Token t) {
+                var value = t.Value;
+                if ("&&".Equals(value) || "||".Equals(value))
+                {
+                    allowNullishCoalescing = false;
+                }
+                if ("??".Equals(value))
+                {
+                    allowAndOr = false;
+                }
+            }
+            
             var token = _lookahead;
             var prec = BinaryPrecedence(token);
             if (prec > 0)
             {
+                UpdateNullishCoalescingRestrictions(token);
                 NextToken();
 
                 _context.IsAssignmentTarget = false;
@@ -1829,6 +1853,12 @@ namespace Esprima
                     {
                         break;
                     }
+                    if ((!allowAndOr && ("&&".Equals(_lookahead.Value) || "||".Equals(_lookahead.Value))) ||
+                        (!allowNullishCoalescing && "??".Equals(_lookahead.Value)))
+                    {
+                        ThrowUnexpectedToken(_lookahead);
+                    }
+                    UpdateNullishCoalescingRestrictions(_lookahead);
 
                     // Reduce: make a binary expression from the three topmost entries.
                     while (stack.Count > 2 && prec <= precedences.Peek())
@@ -1977,7 +2007,7 @@ namespace Esprima
 
                         assignment.Right = new Identifier("yield")
                         {
-                            Location = _config.Loc ? assignment.Right.Location : default,
+                            Location = assignment.Right.Location,
                             Range = assignment.Right.Range
                         };
                     }
@@ -2160,6 +2190,9 @@ namespace Esprima
 
         // https://tc39.github.io/ecma262/#sec-comma-operator
 
+        /// <summary>
+        /// Parses the code as a JavaScript expression.
+        /// </summary>
         public Expression ParseExpression()
         {
             var startToken = _lookahead;
@@ -2763,9 +2796,20 @@ namespace Esprima
             var forIn = true;
             Node? left = null;
             Expression? right = null;
+            var _await = false;
 
             var node = CreateNode();
             ExpectKeyword("for");
+            if (MatchContextualKeyword("await"))
+            {
+                if (!_context.Await) 
+                {
+                    TolerateUnexpectedToken(_lookahead);
+                }
+                _await = true;
+                NextToken();
+            }
+            
             Expect("(");
 
             if (Match(";"))
@@ -2785,7 +2829,7 @@ namespace Esprima
                     var declarations = ParseVariableDeclarationList(ref inFor);
                     _context.AllowIn = previousAllowIn;
 
-                    if (declarations.Count == 1 && MatchKeyword("in"))
+                    if (!_await && declarations.Count == 1 && MatchKeyword("in"))
                     {
                         var decl = declarations[0];
                         if (decl.Init != null && (decl.Id.Type == Nodes.ArrayPattern || decl.Id.Type == Nodes.ObjectPattern || _context.Strict))
@@ -2948,7 +2992,7 @@ namespace Esprima
                 ? Finalize(node, new ForStatement(init, test, update, body)) 
                 : forIn
                     ? (Statement) Finalize(node, new ForInStatement(left, right!, body))
-                    : Finalize(node, new ForOfStatement(left, right!, body));
+                    : Finalize(node, new ForOfStatement(left, right!, body, _await));
         }
 
         // https://tc39.github.io/ecma262/#sec-continue-statement

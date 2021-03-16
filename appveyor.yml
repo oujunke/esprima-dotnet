@@ -10,10 +10,9 @@ build_script:
   - dotnet --version
   - dotnet pack -c Release
 test_script:
-  - dotnet test .\test\Esprima.Tests\Esprima.Tests.csproj -c Debug
-  - dotnet test .\test\Esprima.Tests\Esprima.Tests.csproj -c Release
+  - dotnet test .\test\Esprima.Tests\Esprima.Tests.csproj -c Release /p:Checked=true
 artifacts:
-  - path: 'src\**\*.nupkg'
+  - path: 'src\**\*.*nupkg'
 deploy:  
   - provider: NuGet
     on:
@@ -29,5 +28,4 @@ deploy:
     server: https://www.nuget.org/api/v2/package
     api_key:
       secure: qZ6R8U4mtBXFVRhhNLJyRz3bktF/jL5BvzrCQsXcn6ATRQ4YavFP3By8Sg4hYMH5
-    skip_symbols: true
-    artifact: /.*\.nupkg/  
+    artifact: /.*\.*nupkg/  

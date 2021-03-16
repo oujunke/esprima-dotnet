@@ -8,28 +8,10 @@ using Esprima.Ast;
 
 namespace Esprima
 {
-    public class Loc
+    public class SourceLocation
     {
-        public Marker? Start;
-        public Marker? End;
-    }
-
-    public class Marker
-    {
-        public int Index;
-        public int Line;
-        public int Column;
-
-        public Marker()
-        {
-        }
-
-        public Marker(int index, int line, int column)
-        {
-            Index = index;
-            Line = line;
-            Column = column;
-        }
+        public Position? Start;
+        public Position? End;
     }
 
     internal readonly struct ScannerState
@@ -110,6 +92,7 @@ namespace Esprima
         {
             "&&" ,
             "||" ,
+            "??" ,
             "==" ,
             "!=" ,
             "+=" ,
@@ -252,13 +235,13 @@ namespace Esprima
         {
             var comments = new ArrayList<Comment>();
             int start = 0;
-            Loc loc = new Loc();
+            var loc = new SourceLocation();
 
             if (_trackComment)
             {
                 start = Index - offset;
-                loc.Start = new Marker(0, LineNumber, Index - LineStart - offset);
-                loc.End = new Marker();
+                loc.Start = new Position(LineNumber, Index - LineStart - offset);
+                loc.End = new Position();
             }
 
             while (!Eof())
@@ -269,7 +252,7 @@ namespace Esprima
                 {
                     if (_trackComment)
                     {
-                        loc.End = new Marker(loc.End!.Index, LineNumber, Index - LineStart - 1);
+                        loc.End = new Position(LineNumber, Index - LineStart - 1);
 
                         Comment entry = new Comment
                         {
@@ -294,7 +277,7 @@ namespace Esprima
 
             if (_trackComment)
             {
-                loc.End = new Marker(loc.End!.Index, LineNumber, Index - LineStart);
+                loc.End = new Position(LineNumber, Index - LineStart);
                 var entry = new Comment
                 {
                     MultiLine = false,
@@ -314,12 +297,12 @@ namespace Esprima
         {
             var comments = new ArrayList<Comment>();
             int start = 0;
-            Loc loc = new Loc();
+            var loc = new SourceLocation();
 
             if (_trackComment)
             {
                 start = Index - 2;
-                loc.Start = new Marker(loc.Start!.Index, LineNumber, Index - LineStart - 2);
+                loc.Start = new Position(LineNumber, Index - LineStart - 2);
             }
 
             while (!Eof())
@@ -343,7 +326,7 @@ namespace Esprima
                         Index += 2;
                         if (_trackComment)
                         {
-                            loc.End = new Marker(loc.End!.Index, LineNumber, Index - LineStart);
+                            loc.End = new Position(LineNumber, Index - LineStart);
                             var entry = new Comment
                             {
                                 MultiLine = true,
@@ -367,7 +350,7 @@ namespace Esprima
             // Ran off the end of the file - the whole thing is a comment
             if (_trackComment)
             {
-                loc.End = new Marker(loc.End!.Index, LineNumber, Index - LineStart);
+                loc.End = new Position(LineNumber, Index - LineStart);
                 var entry = new Comment
                 {
                     MultiLine = true,
@@ -379,7 +362,7 @@ namespace Esprima
                 comments.Add(entry);
             }
 
-            this.TolerateUnexpectedToken();
+            TolerateUnexpectedToken();
             return comments;
         }
 
@@ -788,7 +771,6 @@ namespace Esprima
                 case '[':
                 case ']':
                 case ':':
-                case '?':
                 case '~':
                     ++Index;
                     break;
@@ -822,7 +804,7 @@ namespace Esprima
                             {
                                 // 1-character punctuators.
                                 str = Source[Index].ToString();
-                                if ("<>=!+-*%&|^/".IndexOf(str, StringComparison.Ordinal) >= 0)
+                                if ("<>=!+-*%&|?^/".IndexOf(str, StringComparison.Ordinal) >= 0)
                                 {
                                     ++Index;
                                 }

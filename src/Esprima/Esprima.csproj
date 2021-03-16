@@ -13,16 +13,22 @@
     <PackageId>Esprima</PackageId>
     <PackageTags>javascript, parser</PackageTags>
     <PackageProjectUrl>https://github.com/sebastienros/esprima-dotnet</PackageProjectUrl>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/sebastienros/esprima-dotnet/master/LICENSE.txt</PackageLicenseUrl>
+    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
     <Version>2.0.0-beta-$(BuildNumber)</Version>
-    <LangVersion>latest</LangVersion>
 
-    <!-- SourceLink support -->
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
 
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    
+    <DefineConstants Condition="'$(Checked)' == true or $(Configuration) == 'Debug'">$(DefineConstants);LOCATION_ASSERTS</DefineConstants>
+    
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="all" />
