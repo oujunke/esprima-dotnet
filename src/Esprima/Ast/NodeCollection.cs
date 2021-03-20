@@ -10,19 +10,32 @@ namespace Esprima.Ast
     /// <summary>
     /// Collection that enumerates nodes and node lists.
     /// </summary>
-    public readonly struct NodeCollection : IReadOnlyList<Node>
+    public struct NodeCollection : IReadOnlyList<Node>
     {
         internal static readonly NodeCollection Empty = new NodeCollection(0);
 
-        private readonly Node _first;
-        private readonly Node _second;
-        private readonly Node _third;
-        private readonly Node _fourth;
+        private Node _first;
+        private Node _second2;
+        private Node _second
+        {
+            get
+            {
+                //System.Console.WriteLine($"获取_second2:{_second2}-{_second2?.GetHashCode()}-{GetHashCode()}");
+                return _second2;
+            }
+            set
+            {
+                _second2 = value;
+                System.Console.WriteLine($"设置_second2:{_second2}-{_second2.GetHashCode()}-{GetHashCode()}");
+            }
+        }
+        private Node _third;
+        private Node _fourth;
         private readonly Node[] _list1;
         private readonly int _list1Count;
         private readonly Node[] _list2;
         private readonly int _list2Count;
-        private readonly Node _fifth;
+        private Node _fifth;
         private readonly int _count;
 
         private readonly int _startNodeCount;
@@ -110,13 +123,13 @@ namespace Esprima.Ast
         {
             _startNodeCount = 0;
             _first = first;
-            _second = second;
+            _second2 = second;
             _third = third;
             _fourth = fourth;
 
             _list1 = null;
             _list1Count = 0;
-            
+
             _list2 = null;
             _list2Count = 0;
 
@@ -126,7 +139,7 @@ namespace Esprima.Ast
         }
 
         public int Count => _count;
-
+        public static NodeCollection nodes;
         public Node this[int index]
         {
             get
@@ -156,7 +169,7 @@ namespace Esprima.Ast
                 {
                     return _list1[index];
                 }
-                
+
                 index -= _list1Count;
                 if (index < _list2Count)
                 {
@@ -165,8 +178,51 @@ namespace Esprima.Ast
 
                 return _fifth;
             }
+            set
+            {
+                SetValue(index, value);
+            }
         }
+        public void SetValue(int index, Node node)
+        {
+            if (index >= _count)
+            {
+                ThrowIndexOutOfRangeException();
+            }
 
+            if (index < _startNodeCount)
+            {
+                switch (index)
+                {
+                    case 0:
+                        _first = node;
+                        return;
+                    case 1:
+                        _second = node;
+                        return;
+                    case 2:
+                        _third = node;
+                        return;
+                    case 3:
+                        _fourth = node;
+                        return;
+                }
+            }
+
+            index -= _startNodeCount;
+            if (index < _list1Count)
+            {
+                _list1[index] = node;
+            }
+
+            index -= _list1Count;
+            if (index < _list2Count)
+            {
+                _list2[index] = node;
+            }
+
+            _fifth = node;
+        }
         public Enumerator GetEnumerator()
         {
             return new Enumerator(this);
