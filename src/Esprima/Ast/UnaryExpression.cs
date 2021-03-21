@@ -29,7 +29,7 @@ namespace Esprima.Ast
     public class UnaryExpression : Expression
     {
         public readonly UnaryOperator Operator;
-        public readonly Expression Argument;
+        public  Expression Argument;
         public bool Prefix { get; protected set; }
 
         public UnaryExpression(string? op, Expression arg) : this(Nodes.UnaryExpression, op, arg)

@@ -61,8 +61,8 @@ namespace Esprima.Ast
     public sealed class BinaryExpression : Expression
     {
         public readonly BinaryOperator Operator;
-        public readonly Expression Left;
-        public readonly Expression Right;
+        public  Expression Left;
+        public  Expression Right;
 
         public BinaryExpression(string op, Expression left, Expression right) :
             this(ParseBinaryOperator(op), left, right) {}

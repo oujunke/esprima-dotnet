@@ -51,6 +51,15 @@ namespace Esprima.Ast
 
                 return _items[index];
             }
+            set
+            {
+                if ((uint)index >= (uint)_count)
+                {
+                    ThrowIndexOutOfRangeException();
+                }
+
+                _items[index]=value;
+            }
         }
 
         public Enumerator GetEnumerator() => new Enumerator(_items, Count);

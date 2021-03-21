@@ -2,8 +2,8 @@ namespace Esprima.Ast
 {
     public abstract class MemberExpression : Expression
     {
-        public readonly Expression Object;
-        public readonly Expression Property;
+        public Expression Object;
+        public Expression Property;
 
         // true if an indexer is used and the property to be evaluated
         public readonly bool Computed;
