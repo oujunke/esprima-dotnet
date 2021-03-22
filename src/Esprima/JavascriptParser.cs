@@ -2853,6 +2853,10 @@ namespace Esprima
                     else
                     {
                         init = Finalize(initNode, new VariableDeclaration(declarations, VariableDeclarationKind.Var));
+                        if (init.Range.Start == 58415)
+                        {
+
+                        }
                         Expect(";");
                     }
                 }

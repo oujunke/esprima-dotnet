@@ -2,71 +2,38 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using static Esprima.EsprimaExceptionHelper;
 
 namespace Esprima.Ast
 {
-    public readonly struct NodeList<T> : IReadOnlyList<T> where T : Node
+    public class NodeList<T> : List<T> where T : Node
     {
-        internal readonly T[] _items;
-        internal readonly int _count;
-
-        internal NodeList(ICollection<T> collection)
+        internal NodeList(ICollection<T> collection):base(collection)
         {
-            collection ??= ThrowArgumentNullException<ICollection<T>>(nameof(collection));
-
-            var count = _count = collection.Count;
-            if ((_items = count == 0 ? null : new T[count]) != null)
-            {
-                collection.CopyTo(_items, 0);
-            }
+            
         }
 
         internal NodeList(T[] items, int count)
         {
-            _items = items;
-            _count = count;
+            if (items != null)
+            {
+                AddRange(items.Take(count));
+            }
         }
-
-        public int Count
+        public NodeList()
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => _count;
-        }
 
+        }
         public NodeList<Node> AsNodes() =>
-            new NodeList<Node>(_items /* conversion by co-variance! */, _count);
+            new NodeList<Node>(ToArray());
 
-        public T this[int index]
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                // Following trick can reduce the range check by one
-                if ((uint) index >= (uint) _count)
-                {
-                    ThrowIndexOutOfRangeException();
-                }
+        //public Enumerator GetEnumerator() => new Enumerator(_items, Count);
 
-                return _items[index];
-            }
-            set
-            {
-                if ((uint)index >= (uint)_count)
-                {
-                    ThrowIndexOutOfRangeException();
-                }
+        //IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
 
-                _items[index]=value;
-            }
-        }
-
-        public Enumerator GetEnumerator() => new Enumerator(_items, Count);
-
-        IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        //IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         /// <remarks>
         /// This implementation does not detect changes to the list
