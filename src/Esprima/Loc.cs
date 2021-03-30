@@ -48,7 +48,7 @@ namespace Esprima
                       ^ (Source?.GetHashCode() ?? 0));
 
         public override string ToString() =>
-            $"{Start}...{End}{(Source is string s ? ": " + s : null)}";
+            $"{Start}...{End}";//{(Source is string s ? ": " + s : null)}
 
         public static bool operator ==(in Location left, in Location right) => left.Equals(right);
         public static bool operator !=(in Location left, in Location right) => !left.Equals(right);

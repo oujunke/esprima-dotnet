@@ -7,11 +7,13 @@ namespace Esprima.Ast
     {
         public readonly int Start;
         public readonly int End;
+        public readonly string? Source;
 
-        public Range(int start, int end)
+        public Range(int start, int end,string? source)
         {
             Start = start;
             End = end;
+            Source = source;
         }
 
         public bool Equals(Range other) =>
@@ -24,7 +26,7 @@ namespace Esprima.Ast
             unchecked((Start * 397) ^ End);
 
         public override string ToString() =>
-            string.Format(CultureInfo.InvariantCulture, "[{0}..{1})", Start, End);
+            string.Format(CultureInfo.InvariantCulture, "[{0}..{1}:{2})", Start, End,Source);
 
         public static bool operator ==(Range left, Range right) => left.Equals(right);
         public static bool operator !=(Range left, Range right) => !left.Equals(right);
