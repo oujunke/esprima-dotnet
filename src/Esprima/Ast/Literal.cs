@@ -11,7 +11,7 @@ namespace Esprima.Ast
 
         public readonly RegexValue? Regex;
         public readonly object? Value;
-        public readonly string Raw;
+        public string Raw;
         public readonly TokenType TokenType;
 
         internal Literal(TokenType tokenType, object? value, string raw) : base(Nodes.Literal)
