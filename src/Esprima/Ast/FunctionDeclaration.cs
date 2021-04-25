@@ -24,7 +24,7 @@ namespace Esprima.Ast
 
         public Identifier? Id { get; }
 
-        public Node Body { get; }
+        public Node Body { get; set; }
         public bool Generator { get; }
         public bool Expression { get; }
         public bool Async { get; }
