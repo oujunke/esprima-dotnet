@@ -2,7 +2,7 @@ namespace Esprima.Ast
 {
     public sealed class ReturnStatement : Statement
     {
-        public readonly Expression? Argument;
+        public Expression? Argument;
 
         public ReturnStatement(Expression? argument) : base(Nodes.ReturnStatement)
         {

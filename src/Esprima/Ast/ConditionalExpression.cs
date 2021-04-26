@@ -2,9 +2,9 @@ namespace Esprima.Ast
 {
     public sealed class ConditionalExpression : Expression
     {
-        public readonly Expression Test;
-        public readonly Expression Consequent;
-        public readonly Expression Alternate;
+        public Expression Test;
+        public Expression Consequent;
+        public Expression Alternate;
 
         public ConditionalExpression(
             Expression test,

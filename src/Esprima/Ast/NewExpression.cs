@@ -3,7 +3,7 @@ namespace Esprima.Ast
     public sealed class NewExpression : Expression
     {
         private readonly NodeList<Expression> _arguments;
-        public readonly Expression Callee;
+        public Expression Callee;
 
         public NewExpression(
             Expression callee,

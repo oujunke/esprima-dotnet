@@ -3,7 +3,7 @@ namespace Esprima.Ast
     public sealed class SwitchCase : Node
     {
         private readonly NodeList<Statement> _consequent;
-        public readonly Expression? Test;
+        public  Expression? Test;
 
         public SwitchCase(Expression? test, in NodeList<Statement> consequent) : base(Nodes.SwitchCase)
         {

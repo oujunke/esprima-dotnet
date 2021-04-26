@@ -39,8 +39,8 @@ namespace Esprima.Ast
         public readonly AssignmentOperator Operator;
 
         // Can be something else than Expression (ObjectPattern, ArrayPattern) in case of destructuring assignment
-        public readonly Expression Left;
-        public readonly Expression Right;
+        public  Expression Left;
+        public  Expression Right;
 
         public AssignmentExpression(
             string op,
