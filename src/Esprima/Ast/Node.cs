@@ -6,7 +6,7 @@
         {
             Type = type;
         }
-
+        public Node? Parent;
         public readonly Nodes Type;
         public Range Range;    
         public Location Location;
