@@ -9,6 +9,7 @@
         BreakStatement,
         CallExpression,
         CatchClause,
+        ChainExpression,
         ConditionalExpression,
         ContinueStatement,
         DoWhileStatement,
@@ -28,11 +29,14 @@
         MemberExpression,
         NewExpression,
         ObjectExpression,
+        PrivateIdentifier,
         Program,
         Property,
+        PropertyDefinition,
         RestElement,
         ReturnStatement,
         SequenceExpression,
+        StaticBlock,
         SwitchStatement,
         SwitchCase,
         TemplateElement,
@@ -69,6 +73,6 @@
         ExportNamedDeclaration,
         ExportAllDeclaration,
         ExportDefaultDeclaration,
-        ClassExpression,
+        ClassExpression
     };
 }

@@ -1,3 +1,5 @@
+﻿using Esprima.Utils;
+
 namespace Esprima.Ast
 {
     public sealed class IfStatement : Statement
@@ -17,6 +19,11 @@ namespace Esprima.Ast
             Alternate = alternate;
         }
 
-        public override NodeCollection ChildNodes => new NodeCollection(Test, Consequent, Alternate);
+        public override NodeCollection ChildNodes => new(Test, Consequent, Alternate);
+
+        protected internal override void Accept(AstVisitor visitor)
+        {
+            visitor.VisitIfStatement(this);
+        }
     }
 }

@@ -1,13 +1,18 @@
+﻿using System.Diagnostics;
+using System.Numerics;
 using System.Text.RegularExpressions;
+using Esprima.Utils;
 
 namespace Esprima.Ast
 {
-    public sealed class Literal : Expression
+    [DebuggerDisplay("{Raw,nq}")]
+    public class Literal : Expression
     {
         public string? StringValue => TokenType == TokenType.StringLiteral ? Value as string : null;
         public readonly double NumericValue;
         public bool BooleanValue => TokenType == TokenType.BooleanLiteral && NumericValue != 0;
         public Regex? RegexValue => TokenType == TokenType.RegularExpression ? (Regex?) Value : null;
+        public BigInteger? BigIntValue => TokenType == TokenType.BigIntLiteral ? (BigInteger?) Value : null;
 
         public readonly RegexValue? Regex;
         public readonly object? Value;
@@ -46,5 +51,10 @@ namespace Esprima.Ast
         }
 
         public override NodeCollection ChildNodes => NodeCollection.Empty;
+
+        protected internal override void Accept(AstVisitor visitor)
+        {
+            visitor.VisitLiteral(this);
+        }
     }
 }

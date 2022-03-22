@@ -16,7 +16,7 @@
         /// Create a new <see cref="ParserOptions" /> instance.
         /// </summary>
         /// <param name="source">A string representing where the code is coming from, if an error occurs.</param>
-        public ParserOptions(string source) : this(new ErrorHandler {Source = source})
+        public ParserOptions(string source) : this(new ErrorHandler { Source = source })
         {
         }
 
@@ -52,6 +52,6 @@
         /// <summary>
         /// Gets or sets whether the Regular Expression syntax should be converted to a .NET compatible one.
         /// </summary>
-        public bool AdaptRegexp { get; set; }
+        public bool AdaptRegexp { get; set; } = true;
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace Esprima.Ast
+﻿using Esprima.Utils;
+
+namespace Esprima.Ast
 {
     public sealed class TemplateElement : Node
     {
@@ -13,10 +15,15 @@
 
         public sealed class TemplateElementValue
         {
-            public string Cooked = "";
+            public string? Cooked;
             public string Raw = "";
         }
 
         public override NodeCollection ChildNodes => NodeCollection.Empty;
+
+        protected internal override void Accept(AstVisitor visitor)
+        {
+            visitor.VisitTemplateElement(this);
+        }
     }
 }

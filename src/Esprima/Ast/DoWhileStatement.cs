@@ -1,3 +1,5 @@
+﻿using Esprima.Utils;
+
 namespace Esprima.Ast
 {
     public sealed class DoWhileStatement : Statement
@@ -11,6 +13,11 @@ namespace Esprima.Ast
             Test = test;
         }
 
-        public override NodeCollection ChildNodes => new NodeCollection(Body, Test);
+        public override NodeCollection ChildNodes => new(Body, Test);
+
+        protected internal override void Accept(AstVisitor visitor)
+        {
+            visitor.VisitDoWhileStatement(this);
+        }
     }
 }

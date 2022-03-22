@@ -1,5 +1,7 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/bai029h4iajmwcni?svg=true)](https://ci.appveyor.com/project/SebastienRos/esprima-dotnet)
+[![Build](https://github.com/sebastienros/esprima-dotnet/actions/workflows/staging.yml/badge.svg)](https://github.com/sebastienros/esprima-dotnet/actions/workflows/staging.yml)
 [![NuGet](https://img.shields.io/nuget/v/esprima.svg)](https://www.nuget.org/packages/esprima)
+[![MyGet](https://img.shields.io/myget/esprimadotnet/v/esprima?label=MyGet)](https://www.myget.org/feed/esprimadotnet/package/nuget/Esprima)
+
 
 **Esprima .NET** (BSD license) is a .NET port of the [esprima.org](http://esprima.org) project.
 It is a standard-compliant [ECMAScript](http://www.ecma-international.org/publications/standards/Ecma-262.htm)
@@ -8,7 +10,7 @@ parser (also popularly known as
 
 ### Features
 
-- Full support for ECMAScript 2016 ([ECMA-262 7th Edition](http://www.ecma-international.org/publications/standards/Ecma-262.htm))
+- Full support for ECMAScript 2019 ([ECMA-262 10th Edition](http://www.ecma-international.org/publications/standards/Ecma-262.htm))
 - Sensible [syntax tree format](https://github.com/estree/estree/blob/master/es5.md) as standardized by [ESTree project](https://github.com/estree/estree)
 - Optional tracking of syntax node location (index-based and line-column)
 - Heavily tested

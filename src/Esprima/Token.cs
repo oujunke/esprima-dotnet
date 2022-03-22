@@ -1,4 +1,5 @@
-﻿using Esprima.Ast;
+﻿using System.Numerics;
+using Esprima.Ast;
 
 namespace Esprima
 {
@@ -13,7 +14,8 @@ namespace Esprima
         Punctuator,
         StringLiteral,
         RegularExpression,
-        Template
+        Template,
+        BigIntLiteral
     };
 
     public class Token
@@ -30,6 +32,7 @@ namespace Esprima
 
         // For NumericLiteral
         public bool Octal;
+        public char? NotEscapeSequenceHead;
 
         // For templates
         public bool Head;
@@ -40,6 +43,7 @@ namespace Esprima
         public double NumericValue;
         public object? Value;
         public RegexValue? RegexValue;
+        public BigInteger? BigIntValue;
 
         public void Clear()
         {
@@ -58,6 +62,7 @@ namespace Esprima
             NumericValue = 0;
             Value = null;
             RegexValue = null;
+            BigIntValue = null;
         }
     }
 }

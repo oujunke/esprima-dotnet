@@ -1,4 +1,6 @@
-﻿namespace Esprima.Ast
+﻿using Esprima.Utils;
+
+namespace Esprima.Ast
 {
     public sealed class ExportDefaultDeclaration : ExportDeclaration
     {
@@ -9,6 +11,11 @@
             Declaration = declaration;
         }
 
-        public override NodeCollection ChildNodes => new NodeCollection(Declaration);
+        public override NodeCollection ChildNodes => new(Declaration);
+
+        protected internal override void Accept(AstVisitor visitor)
+        {
+            visitor.VisitExportDefaultDeclaration(this);
+        }
     }
 }

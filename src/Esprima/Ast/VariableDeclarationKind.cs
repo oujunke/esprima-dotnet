@@ -1,9 +1,9 @@
-namespace Esprima.Ast
+﻿namespace Esprima.Ast
 {
     public enum VariableDeclarationKind
     {
         Var,
         Let,
-        Const,
+        Const
     }
 }

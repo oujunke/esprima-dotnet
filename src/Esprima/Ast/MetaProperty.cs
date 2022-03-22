@@ -1,4 +1,6 @@
-﻿namespace Esprima.Ast
+﻿using Esprima.Utils;
+
+namespace Esprima.Ast
 {
     public sealed class MetaProperty : Expression
     {
@@ -11,6 +13,11 @@
             Property = property;
         }
 
-        public override NodeCollection ChildNodes => new NodeCollection(Meta, Property);
+        public override NodeCollection ChildNodes => new(Meta, Property);
+
+        protected internal override void Accept(AstVisitor visitor)
+        {
+            visitor.VisitMetaProperty(this);
+        }
     }
 }

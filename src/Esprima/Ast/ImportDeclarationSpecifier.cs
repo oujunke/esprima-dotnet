@@ -2,8 +2,14 @@
 {
     public abstract class ImportDeclarationSpecifier : Declaration
     {
-        protected ImportDeclarationSpecifier(Nodes type) : base(type)
+        /// <summary>
+        /// Identifier | StringLiteral
+        /// </summary>
+        public readonly Expression Local;
+
+        protected ImportDeclarationSpecifier(Expression local, Nodes type) : base(type)
         {
+            Local = local;
         }
     }
 }

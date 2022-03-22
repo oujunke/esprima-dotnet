@@ -1,14 +1,31 @@
-﻿namespace Esprima.Ast
+﻿using Esprima.Utils;
+
+namespace Esprima.Ast
 {
     public sealed class ExportAllDeclaration : ExportDeclaration
     {
         public readonly Literal Source;
 
-        public ExportAllDeclaration(Literal source) : base(Nodes.ExportAllDeclaration)
+        /// <summary>
+        /// Identifier | StringLiteral
+        /// </summary>
+        public readonly Expression? Exported;
+
+        public ExportAllDeclaration(Literal source) : this(source, null)
         {
-            Source = source;
         }
 
-        public override NodeCollection ChildNodes => new NodeCollection(Source);
+        public ExportAllDeclaration(Literal source, Expression? exported) : base(Nodes.ExportAllDeclaration)
+        {
+            Source = source;
+            Exported = exported;
+        }
+
+        public override NodeCollection ChildNodes => new(Source, Exported);
+
+        protected internal override void Accept(AstVisitor visitor)
+        {
+            visitor.VisitExportAllDeclaration(this);
+        }
     }
 }

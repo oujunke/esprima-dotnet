@@ -1,4 +1,6 @@
-﻿namespace Esprima.Ast
+﻿using Esprima.Utils;
+
+namespace Esprima.Ast
 {
     public sealed class AssignmentPattern : Expression
     {
@@ -11,6 +13,11 @@
             Right = right;
         }
 
-        public override NodeCollection ChildNodes => new NodeCollection(Left, Right);
+        public override NodeCollection ChildNodes => new(Left, Right);
+
+        protected internal override void Accept(AstVisitor visitor)
+        {
+            visitor.VisitAssignmentPattern(this);
+        }
     }
 }

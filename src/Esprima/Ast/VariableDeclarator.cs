@@ -1,3 +1,5 @@
+﻿using Esprima.Utils;
+
 namespace Esprima.Ast
 {
     public sealed class VariableDeclarator : Node
@@ -12,6 +14,11 @@ namespace Esprima.Ast
             Init = init;
         }
 
-        public override NodeCollection ChildNodes => new NodeCollection(Id, Init);
+        public override NodeCollection ChildNodes => new(Id, Init);
+
+        protected internal override void Accept(AstVisitor visitor)
+        {
+            visitor.VisitVariableDeclarator(this);
+        }
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace Esprima.Ast
+﻿using Esprima.Utils;
+
+namespace Esprima.Ast
 {
     public sealed class MethodDefinition : ClassProperty
     {
@@ -6,10 +8,10 @@
 
         public MethodDefinition(
             Expression key,
-            bool computed, 
+            bool computed,
             FunctionExpression value,
             PropertyKind kind,
-            bool isStatic) 
+            bool isStatic)
             : base(Nodes.MethodDefinition)
         {
             Static = isStatic;
@@ -17,6 +19,11 @@
             Computed = computed;
             Value = value;
             Kind = kind;
+        }
+
+        protected internal override void Accept(AstVisitor visitor)
+        {
+            visitor.VisitMethodDefinition(this);
         }
     }
 }

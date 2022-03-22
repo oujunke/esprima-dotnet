@@ -1,3 +1,5 @@
+﻿using Esprima.Utils;
+
 namespace Esprima.Ast
 {
     public sealed class Property : ClassProperty
@@ -8,7 +10,7 @@ namespace Esprima.Ast
         public Property(
             PropertyKind kind,
             Expression key,
-            bool computed, 
+            bool computed,
             Expression value,
             bool method,
             bool shorthand)
@@ -20,6 +22,11 @@ namespace Esprima.Ast
             Kind = kind;
             Method = method;
             Shorthand = shorthand;
+        }
+
+        protected internal override void Accept(AstVisitor visitor)
+        {
+            visitor.VisitProperty(this);
         }
     }
 }

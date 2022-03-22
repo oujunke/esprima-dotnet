@@ -1,5 +1,9 @@
+﻿using System.Diagnostics;
+using Esprima.Utils;
+
 namespace Esprima.Ast
 {
+    [DebuggerDisplay("{Name,nq}")]
     public sealed class Identifier : Expression
     {
         public readonly string? Name;
@@ -10,5 +14,10 @@ namespace Esprima.Ast
         }
 
         public override NodeCollection ChildNodes => NodeCollection.Empty;
+
+        protected internal override void Accept(AstVisitor visitor)
+        {
+            visitor.VisitIdentifier(this);
+        }
     }
 }

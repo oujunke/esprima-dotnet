@@ -1,37 +1,26 @@
-using Esprima.Utils;
-
+﻿using Esprima.Utils;
 using static Esprima.EsprimaExceptionHelper;
 
 namespace Esprima.Ast
 {
     public enum AssignmentOperator
     {
-        [EnumMember(Value = "=")]
-        Assign,
-        [EnumMember(Value = "+=")]
-        PlusAssign,
-        [EnumMember(Value = "-=")]
-        MinusAssign,
-        [EnumMember(Value = "*=")]
-        TimesAssign,
-        [EnumMember(Value = "/=")]
-        DivideAssign,
-        [EnumMember(Value = "%=")]
-        ModuloAssign,
-        [EnumMember(Value = "&=")]
-        BitwiseAndAssign,
-        [EnumMember(Value = "|=")]
-        BitwiseOrAssign,
-        [EnumMember(Value = "^=")]
-        BitwiseXOrAssign,
-        [EnumMember(Value = "<<=")]
-        LeftShiftAssign,
-        [EnumMember(Value = ">>=")]
-        RightShiftAssign,
-        [EnumMember(Value = ">>>=")]
-        UnsignedRightShiftAssign,
-        [EnumMember(Value = "**=")]
-        ExponentiationAssign,
+        [EnumMember(Value = "=")] Assign,
+        [EnumMember(Value = "+=")] PlusAssign,
+        [EnumMember(Value = "-=")] MinusAssign,
+        [EnumMember(Value = "*=")] TimesAssign,
+        [EnumMember(Value = "/=")] DivideAssign,
+        [EnumMember(Value = "%=")] ModuloAssign,
+        [EnumMember(Value = "&=")] BitwiseAndAssign,
+        [EnumMember(Value = "|=")] BitwiseOrAssign,
+        [EnumMember(Value = "^=")] BitwiseXOrAssign,
+        [EnumMember(Value = "<<=")] LeftShiftAssign,
+        [EnumMember(Value = ">>=")] RightShiftAssign,
+        [EnumMember(Value = ">>>=")] UnsignedRightShiftAssign,
+        [EnumMember(Value = "**=")] ExponentiationAssign,
+        [EnumMember(Value = "??=")] NullishAssign,
+        [EnumMember(Value = "&&=")] AndAssign,
+        [EnumMember(Value = "||=")] OrAssign
     }
 
     public sealed class AssignmentExpression : Expression
@@ -44,7 +33,7 @@ namespace Esprima.Ast
 
         public AssignmentExpression(
             string op,
-            Expression left, 
+            Expression left,
             Expression right) :
             base(Nodes.AssignmentExpression)
         {
@@ -71,10 +60,18 @@ namespace Esprima.Ast
                 "<<=" => AssignmentOperator.LeftShiftAssign,
                 ">>=" => AssignmentOperator.RightShiftAssign,
                 ">>>=" => AssignmentOperator.UnsignedRightShiftAssign,
+                "??=" => AssignmentOperator.NullishAssign,
+                "&&=" => AssignmentOperator.AndAssign,
+                "||=" => AssignmentOperator.OrAssign,
                 _ => ThrowArgumentOutOfRangeException<AssignmentOperator>(nameof(op), "Invalid assignment operator: " + op)
             };
         }
 
-        public override NodeCollection ChildNodes => new NodeCollection(Left, Right);
+        public override NodeCollection ChildNodes => new(Left, Right);
+
+        protected internal override void Accept(AstVisitor visitor)
+        {
+            visitor.VisitAssignmentExpression(this);
+        }
     }
 }

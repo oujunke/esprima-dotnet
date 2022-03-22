@@ -1,4 +1,6 @@
-﻿namespace Esprima.Ast
+﻿using Esprima.Utils;
+
+namespace Esprima.Ast
 {
     public sealed class YieldExpression : Expression
     {
@@ -11,6 +13,11 @@
             Delegate = delgate;
         }
 
-        public override NodeCollection ChildNodes => new NodeCollection(Argument);
+        public override NodeCollection ChildNodes => new(Argument);
+
+        protected internal override void Accept(AstVisitor visitor)
+        {
+            visitor.VisitYieldExpression(this);
+        }
     }
 }

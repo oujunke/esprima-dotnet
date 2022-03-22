@@ -1,8 +1,10 @@
-﻿namespace Esprima.Ast
+﻿using Esprima.Utils;
+
+namespace Esprima.Ast
 {
     public sealed class ArrowParameterPlaceHolder : Expression
     {
-        public static readonly ArrowParameterPlaceHolder Empty = new ArrowParameterPlaceHolder(new NodeList<Expression>(), false);
+        public static readonly ArrowParameterPlaceHolder Empty = new(new NodeList<Expression>(), false);
 
         private readonly NodeList<Expression> _params;
 
@@ -20,5 +22,10 @@
         public bool Async { get; }
 
         public override NodeCollection ChildNodes => GenericChildNodeYield.Yield(_params);
+
+        protected internal override void Accept(AstVisitor visitor)
+        {
+            visitor.VisitArrowParameterPlaceHolder(this);
+        }
     }
 }

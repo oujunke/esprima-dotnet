@@ -30,3 +30,7 @@ project.lock.json
 .testPublish/
 .idea
 BenchmarkDotNet.Artifacts*
+node_modules
+
+# generated code
+/test/Esprima.Tests.Test262/Generated

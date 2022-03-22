@@ -102,7 +102,16 @@ namespace Esprima.Tests
 
             Assert.NotNull(literal);
             Assert.Equal(expected, literal.NumericValue);
+        }
 
+        [Theory]
+        [InlineData("export { Mercury as \"☿\" } from \"./export-expname_FIXTURE.js\";")]
+        [InlineData("export * as \"All\" from \"./export-expname_FIXTURE.js\";")]
+        [InlineData("export { \"☿\" as Ami } from \"./export-expname_FIXTURE.js\"")]
+        [InlineData("import { \"☿\" as Ami } from \"./export-expname_FIXTURE.js\";")]
+        public void ShouldParseModuleImportExportWithStringIdentifiers(string source)
+        {
+            new JavaScriptParser(source).ParseModule();
         }
 
         [Fact]
@@ -110,6 +119,26 @@ namespace Esprima.Tests
         {
             var parser = new JavaScriptParser("class Rectangle extends aggregation(Shape, Colored, ZCoord) { }");
             var program = parser.ParseScript();
+        }
+
+        [Fact]
+        public void ShouldParseClassStaticBlocks()
+        {
+            const string Code = @"
+class aa {
+    static qq() {
+    }
+    static staticProperty1 = 'Property 1';
+    static staticProperty2;
+    static {
+      this.staticProperty2 = 'Property 2';
+    }
+    static staticProperty3;
+    static {
+      this.staticProperty3 = 'Property 3';
+    }
+}";
+            new JavaScriptParser(Code).ParseScript();
         }
 
         [Fact]
@@ -180,6 +209,103 @@ f(values);
         {
             var parser = new JavaScriptParser("if ((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((true)))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))) { } ");
             Assert.Throws<ParserException>(() => parser.ParseScript());
-        }        
+        }
+
+        [Fact]
+        public void ShouldParseStaticMemberExpressionPropertyInitializer()
+        {
+            var parser = new JavaScriptParser("class Edge { [util.inspect.custom] () { return this.toJSON() } }");
+            parser.ParseScript();
+        }
+
+        [Fact]
+        public void AllowsSingleProto()
+        {
+            var parser = new JavaScriptParser("if({ __proto__: [] } instanceof Array) {}", new ParserOptions { Tolerant = false });
+            parser.ParseScript();
+        }
+
+        [Fact]
+        public void ThrowsErrorForDuplicateProto()
+        {
+            var parser = new JavaScriptParser("if({ __proto__: [], __proto__: [] } instanceof Array) {}", new ParserOptions { Tolerant = false });
+            Assert.Throws<ParserException>(() => parser.ParseScript());
+        }
+
+        [Theory]
+        [InlineData("(async () => { for await (var x of []) { } })()")]
+        [InlineData("(async () => { for await (let x of []) { } })()")]
+        [InlineData("(async () => { for await (const x of []) { } })()")]
+        [InlineData("(async () => { for await (x of []) { } })()")]
+        public void ParsesValidForAwaitLoops(string code)
+        {
+            var errorHandler = new CollectingErrorHandler();
+            var parser = new JavaScriptParser(code, new ParserOptions { Tolerant = true, ErrorHandler = errorHandler });
+            parser.ParseScript();
+
+            Assert.False(errorHandler.Errors.Any());
+        }
+
+        [Theory]
+        [InlineData("(async () => { for await (;;) { } })()")]
+        [InlineData("(async () => { for await (var i = 0, j = 1;;) { } })()")]
+        [InlineData("(async () => { for await (let i = 0, j = 1;;) { } })()")]
+        [InlineData("(async () => { for await (const i = 0, j = 1;;) { } })()")]
+        [InlineData("(async () => { for await (i = 0, j = 1;;) { } })()")]
+        [InlineData("(async () => { for await (var x = (0 in []) in {}) { } })()")]
+        [InlineData("(async () => { for await (let x in {}) { } })()")]
+        [InlineData("(async () => { for await (const x in {}) { } })()")]
+        [InlineData("(async () => { for await (let in {}) { } })()")]
+        [InlineData("(async () => { for await (const in {}) { } })()")]
+        [InlineData("(async () => { for await (x in {}) { } })()")]
+        public void ToleratesInvalidForAwaitLoops(string code)
+        {
+            var errorHandler = new CollectingErrorHandler();
+            var parser = new JavaScriptParser(code, new ParserOptions { Tolerant = true, ErrorHandler = errorHandler });
+            parser.ParseScript();
+
+            Assert.True(errorHandler.Errors.Any());
+
+            parser = new JavaScriptParser(code, new ParserOptions { Tolerant = false });
+            Assert.Throws<ParserException>(() => parser.ParseScript());
+        }
+
+        [Fact]
+        public void ShouldParseBigIntFormatsAndUsageTypes()
+        {
+            const string Code = @"
+                x = -1n;
+                x = 0n;
+                x = 1n;
+                x = 0x20602800080017fn;
+                x = 0b00n;
+
+                callback(-1n);
+                callback(0n);
+                callback(1n);
+                callback(0x20602800080017fn)
+                callback(0b00n);
+
+                -1n;
+                0n;
+                1n;
+                0x20602800080017fn;
+                0b00n;";
+
+            new JavaScriptParser(Code).ParseScript();
+        }
+
+        [Fact]
+        public void TestPrivateIdentifierIn()
+        {
+            const string Code = @"
+class aa {
+    #bb;
+    cc(ee) {
+        var d =  #bb in ee;
+    }
+}";
+            new JavaScriptParser(Code).ParseScript();
+        }
     }
 }

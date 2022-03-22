@@ -1,3 +1,5 @@
+﻿using Esprima.Utils;
+
 namespace Esprima.Ast
 {
     public sealed class LabeledStatement : Statement
@@ -12,6 +14,11 @@ namespace Esprima.Ast
             body.LabelSet = label;
         }
 
-        public override NodeCollection ChildNodes => new NodeCollection(Label, Body);
+        public override NodeCollection ChildNodes => new(Label, Body);
+
+        protected internal override void Accept(AstVisitor visitor)
+        {
+            visitor.VisitLabeledStatement(this);
+        }
     }
 }
