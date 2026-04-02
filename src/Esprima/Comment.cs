@@ -1,22 +1,39 @@
-﻿using System;
+﻿using System.Runtime.InteropServices;
 
-namespace Esprima
+namespace Esprima;
+
+public enum CommentType
 {
-    public enum CommentType
+    Block,
+    Line
+}
+
+[StructLayout(LayoutKind.Auto)]
+public readonly record struct Comment
+{
+    internal Comment(
+        CommentType type,
+        Range slice,
+        int start,
+        int end,
+        Position startPosition,
+        Position endPosition)
     {
-        Block,
-        Line
+        Type = type;
+        Slice = slice;
+        Start = start;
+        End = end;
+        StartPosition = startPosition;
+        EndPosition = endPosition;
     }
 
-    public class Comment
-    {
-        public CommentType Type;
-        public string? Value;
+    public readonly CommentType Type;
 
-        public bool MultiLine;
-        public int[] Slice = Array.Empty<int>();
-        public int Start;
-        public int End;
-        public SourceLocation? Loc;
-    }
+    public readonly Range Slice;
+
+    public readonly int Start;
+    public readonly int End;
+
+    public readonly Position StartPosition;
+    public readonly Position EndPosition;
 }

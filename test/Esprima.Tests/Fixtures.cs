@@ -1,219 +1,340 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
+﻿using System.Reflection;
+using DiffEngine;
 using Esprima.Ast;
 using Esprima.Utils;
+using Esprima.Utils.Jsx;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Xunit;
 
-namespace Esprima.Test
+namespace Esprima.Test;
+
+public class Fixtures
 {
-    public class Fixtures
+    // Do manually set it to true to update local test files with the current results.
+    // Only use this when the test is deemed wrong.
+    private const bool WriteBackExpectedTree = false;
+
+    internal const string FixturesDirName = "Fixtures";
+
+    private static Lazy<Dictionary<string, FixtureMetadata>> Metadata { get; } = new(() => FixtureMetadata.ReadMetadata());
+
+    private static string ParseAndFormat(SourceType sourceType, string source,
+        ParserOptions parserOptions, Func<ParserOptions, JavaScriptParser> parserFactory,
+        AstToJsonOptions conversionOptions)
     {
-        // Do manually set it to true to update local test files with the current results.
-        // Only use this when the test is deemed wrong.
-        const bool WriteBackExpectedTree = false;
+        var parser = parserFactory(parserOptions);
+        var program = sourceType == SourceType.Script ? (Program) parser.ParseScript(source) : parser.ParseModule(source);
 
-        [Fact]
-        public void HoistingScopeShouldWork()
+        return program.ToJsonString(conversionOptions, indent: "  ");
+    }
+
+    private static bool CompareTreesInternal(JObject actualJObject, JObject expectedJObject, FixtureMetadata metadata)
+    {
+        // Don't compare the tokens array as it's not in the generated AST
+        if (!metadata.IncludesTokens)
         {
-            var parser = new JavaScriptParser(@"
-                function p() {}
-                var x;");
-            var program = parser.ParseScript();
-        }
-
-        private static string ParseAndFormat(SourceType sourceType, string source, ParserOptions options)
-        {
-            var parser = new JavaScriptParser(source, options);
-            var program = sourceType == SourceType.Script ? (Program) parser.ParseScript() : parser.ParseModule();
-            const string indent = "  ";
-            return program.ToJsonString(
-                AstJson.Options.Default
-                    .WithIncludingLineColumn(true)
-                    .WithIncludingRange(true),
-                indent
-            );
-        }
-
-        private static bool CompareTreesInternal(string actual, string expected)
-        {
-            var actualJObject = JObject.Parse(actual);
-            var expectedJObject = JObject.Parse(expected);
-
-            // Don't compare the tokens array as it's not in the generated AST
             expectedJObject.Remove("tokens");
-            expectedJObject.Remove("comments");
-            expectedJObject.Remove("errors");
-
-            return JToken.DeepEquals(actualJObject, expectedJObject);
         }
+        expectedJObject.Remove("comments");
+        expectedJObject.Remove("errors");
 
-        private static void CompareTrees(string actual, string expected, string path)
+        // Don't compare location sources as it's not in the generated AST
+        if (metadata.IncludesLocationSource)
         {
-            var actualJObject = JObject.Parse(actual);
-            var expectedJObject = JObject.Parse(expected);
+            IEnumerable<JObject> locObjects = expectedJObject.Descendants()
+                .OfType<JProperty>()
+                .Where(prop => prop.Name == "loc")
+                .Select(prop => prop.Value as JObject)
+                .Where(obj => obj != null)!;
 
-            // Don't compare the tokens array as it's not in the generated AST
-            expectedJObject.Remove("tokens");
-            expectedJObject.Remove("comments");
-            expectedJObject.Remove("errors");
-
-            var areEqual = JToken.DeepEquals(actualJObject, expectedJObject);
-            if (!areEqual)
+            foreach (var obj in locObjects)
             {
-                var actualString = actualJObject.ToString();
-                var expectedString = expectedJObject.ToString();
-                Assert.Equal(expectedString, actualString);
+                obj.Remove("source");
             }
         }
 
-        [Theory]
-        [MemberData(nameof(SourceFiles), "Fixtures")]
-        public void ExecuteTestCase(string fixture)
+        return JToken.DeepEquals(actualJObject, expectedJObject);
+    }
+
+    private static bool CompareTrees(string actual, string expected, FixtureMetadata metadata)
+    {
+        var actualJObject = JObject.Parse(actual);
+        var expectedJObject = JObject.Parse(expected);
+
+        return CompareTreesInternal(actualJObject, expectedJObject, metadata);
+    }
+
+    private static void CompareTreesAndAssert(string actual, string expected, FixtureMetadata metadata)
+    {
+        var actualJObject = JObject.Parse(actual);
+        var expectedJObject = JObject.Parse(expected);
+
+        var areEqual = CompareTreesInternal(actualJObject, expectedJObject, metadata);
+        if (!areEqual)
         {
+            var actualString = actualJObject.ToString();
+            var expectedString = expectedJObject.ToString();
 
-            var options = new ParserOptions { Tokens = true };
+            var file1 = Path.GetTempFileName() + ".json";
+            var file2 = Path.GetTempFileName() + ".json";
+            File.WriteAllText(file1, expectedString);
+            File.WriteAllText(file2, actualString);
+            DiffRunner.Launch(file1, file2);
 
-            string treeFilePath, failureFilePath, moduleFilePath;
-            var jsFilePath = Path.Combine(GetFixturesPath(), "Fixtures", fixture);
-            if (jsFilePath.EndsWith(".source.js"))
+            Assert.Equal(expectedString, actualString);
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(SourceFiles), "Fixtures")]
+    public void ExecuteTestCase(string fixture)
+    {
+        static T CreateParserOptions<T>(bool tolerant, RegExpParseMode regExpParseMode) where T : ParserOptions, new() => new T
+        {
+            Tokens = true,
+            Tolerant = tolerant,
+            RegExpParseMode = regExpParseMode,
+            AllowReturnOutsideFunction = tolerant
+        };
+
+        var (parserOptionsFactory, parserFactory, conversionDefaultOptions) = fixture.StartsWith("JSX", StringComparison.Ordinal)
+            ? (CreateParserOptions<JsxParserOptions>,
+                opts => new JsxParser((JsxParserOptions) opts),
+                JsxAstToJsonOptions.Default)
+            : (new Func<bool, RegExpParseMode, ParserOptions>(CreateParserOptions<ParserOptions>),
+                new Func<ParserOptions, JavaScriptParser>(opts => new JavaScriptParser(opts)),
+                AstToJsonOptions.Default);
+
+        string treeFilePath, failureFilePath, moduleFilePath;
+        var jsFilePath = Path.Combine(GetFixturesPath(), FixturesDirName, fixture);
+        var jsFileDirectoryName = Path.GetDirectoryName(jsFilePath)!;
+        if (jsFilePath.EndsWith(".source.js", StringComparison.Ordinal))
+        {
+            treeFilePath = Path.Combine(jsFileDirectoryName, Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(jsFilePath))) + ".tree.json";
+            failureFilePath = Path.Combine(jsFileDirectoryName, Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(jsFilePath))) + ".failure.json";
+            moduleFilePath = Path.Combine(jsFileDirectoryName, Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(jsFilePath))) + ".module.json";
+        }
+        else
+        {
+            treeFilePath = Path.Combine(jsFileDirectoryName, Path.GetFileNameWithoutExtension(jsFilePath)) + ".tree.json";
+            failureFilePath = Path.Combine(jsFileDirectoryName, Path.GetFileNameWithoutExtension(jsFilePath)) + ".failure.json";
+            moduleFilePath = Path.Combine(jsFileDirectoryName, Path.GetFileNameWithoutExtension(jsFilePath)) + ".module.json";
+        }
+
+        var script = File.ReadAllText(jsFilePath);
+        if (jsFilePath.EndsWith(".source.js", StringComparison.Ordinal))
+        {
+            var parser = new JavaScriptParser();
+            var program = parser.ParseScript(script);
+            var source = program.Body.First().As<VariableDeclaration>().Declarations.First().As<VariableDeclarator>().Init!.As<Literal>().StringValue!;
+            script = source;
+        }
+
+        var expected = "";
+        var invalid = false;
+
+        var filename = Path.GetFileNameWithoutExtension(jsFilePath);
+
+        var isModule =
+            filename.Contains("module") ||
+            filename.Contains("export") ||
+            filename.Contains("import");
+
+        if (!filename.Contains(".module"))
+        {
+            isModule &= !jsFilePath.Contains("dynamic-import") && !jsFilePath.Contains("script");
+        }
+
+        var sourceType = isModule
+            ? SourceType.Module
+            : SourceType.Script;
+
+        if (!Metadata.Value.TryGetValue(jsFilePath, out var metadata))
+        {
+            metadata = FixtureMetadata.Default;
+        }
+
+        if (metadata.Skip)
+        {
+            return;
+        }
+
+        var parserOptions = parserOptionsFactory(false, !metadata.IgnoresRegex ? RegExpParseMode.AdaptToInterpreted : RegExpParseMode.Skip);
+
+        var conversionOptions = metadata.CreateConversionOptions(conversionDefaultOptions);
+        if (File.Exists(moduleFilePath))
+        {
+            sourceType = SourceType.Module;
+            expected = File.ReadAllText(moduleFilePath);
+            if (WriteBackExpectedTree && conversionOptions.TestCompatibilityMode == AstToJsonTestCompatibilityMode.None)
             {
-                treeFilePath = Path.Combine(Path.GetDirectoryName(jsFilePath), Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(jsFilePath))) + ".tree.json";
-                failureFilePath = Path.Combine(Path.GetDirectoryName(jsFilePath), Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(jsFilePath))) + ".failure.json";
-                moduleFilePath = Path.Combine(Path.GetDirectoryName(jsFilePath), Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(jsFilePath))) + ".module.json";
+                var actual = ParseAndFormat(sourceType, script, parserOptions, parserFactory, conversionOptions);
+                if (!CompareTrees(actual, expected, metadata))
+                    File.WriteAllText(moduleFilePath, actual);
             }
-            else
+        }
+        else if (File.Exists(treeFilePath))
+        {
+            expected = File.ReadAllText(treeFilePath);
+            if (WriteBackExpectedTree && conversionOptions.TestCompatibilityMode == AstToJsonTestCompatibilityMode.None)
             {
-                treeFilePath = Path.Combine(Path.GetDirectoryName(jsFilePath), Path.GetFileNameWithoutExtension(jsFilePath)) + ".tree.json";
-                failureFilePath = Path.Combine(Path.GetDirectoryName(jsFilePath), Path.GetFileNameWithoutExtension(jsFilePath)) + ".failure.json";
-                moduleFilePath = Path.Combine(Path.GetDirectoryName(jsFilePath), Path.GetFileNameWithoutExtension(jsFilePath)) + ".module.json";
+                var actual = ParseAndFormat(sourceType, script, parserOptions, parserFactory, conversionOptions);
+                if (!CompareTrees(actual, expected, metadata))
+                    File.WriteAllText(treeFilePath, actual);
             }
-
-            var script = File.ReadAllText(jsFilePath);
-            if (jsFilePath.EndsWith(".source.js"))
+        }
+        else if (File.Exists(failureFilePath))
+        {
+            invalid = true;
+            expected = File.ReadAllText(failureFilePath);
+            if (WriteBackExpectedTree && conversionOptions.TestCompatibilityMode == AstToJsonTestCompatibilityMode.None)
             {
-                var parser = new JavaScriptParser(script);
-                var program = parser.ParseScript();
-                var source = program.Body.First().As<VariableDeclaration>().Declarations.First().As<VariableDeclarator>().Init.As<Literal>().StringValue;
-                script = source;
-            }
-
-            var expected = "";
-            var invalid = false;
-
-            var filename = Path.GetFileNameWithoutExtension(jsFilePath);
-
-            var isModule =
-                filename.Contains("module") ||
-                filename.Contains("export") ||
-                filename.Contains("import");
-
-            if (!filename.Contains(".module"))
-            {
-                isModule &= !jsFilePath.Contains("dynamic-import") && !jsFilePath.Contains("script");
-            }
-
-            var sourceType = isModule
-                ? SourceType.Module
-                : SourceType.Script;
-
-#pragma warning disable 162
-            if (File.Exists(moduleFilePath))
-            {
-                sourceType = SourceType.Module;
-                expected = File.ReadAllText(moduleFilePath);
-                if (WriteBackExpectedTree)
+                try
                 {
-                    var actual = ParseAndFormat(sourceType, script, options);
-                    if (!CompareTreesInternal(actual, expected))
-                        File.WriteAllText(moduleFilePath, actual);
+                    ParseAndFormat(sourceType, script, parserOptions, parserFactory, conversionOptions);
+                }
+                catch (ParserException ex)
+                {
+                    var expectedJsonObject = JObject.Parse(expected);
+
+                    var parseError = ex.Error!;
+                    var actualJsonObject = new JObject
+                    {
+                        ["index"] = parseError.Index,
+                        ["lineNumber"] = parseError.LineNumber,
+                        ["column"] = parseError.Column,
+                        ["message"] = ex.Message,
+                        ["description"] = parseError.Description,
+                    };
+
+                    if (!JToken.DeepEquals(expectedJsonObject, actualJsonObject))
+                        File.WriteAllText(failureFilePath, actualJsonObject.ToString(Formatting.None));
                 }
             }
-            else if (File.Exists(treeFilePath))
-            {
-                expected = File.ReadAllText(treeFilePath);
-                if (WriteBackExpectedTree)
-
-                {
-                    var actual = ParseAndFormat(sourceType, script, options);
-                    if (!CompareTreesInternal(actual, expected))
-                        File.WriteAllText(treeFilePath, actual);
-                }
-            }
-            else if (File.Exists(failureFilePath))
-            {
-                invalid = true;
-                expected = File.ReadAllText(failureFilePath);
-                if (WriteBackExpectedTree)
-                {
-                    var actual = ParseAndFormat(sourceType, script, options);
-                    if (!CompareTreesInternal(actual, expected))
-                        File.WriteAllText(failureFilePath, actual);
-                }
-#pragma warning restore 162
-            }
-            else
-            {
-                // cannot compare
-                return;
-            }
-
-            invalid |=
-                filename.Contains("error") ||
-                filename.Contains("invalid") && !filename.Contains("invalid-yield-object-");
-
-            if (!invalid)
-            {
-                options.Tolerant = true;
-
-                var actual = ParseAndFormat(sourceType, script, options);
-                CompareTrees(actual, expected, jsFilePath);
-            }
-            else
-            {
-                options.Tolerant = false;
-
-                // TODO: check the accuracy of the message and of the location
-                Assert.Throws<ParserException>(() => ParseAndFormat(sourceType, script, options));
-            }
+        }
+        else
+        {
+            // cannot compare
+            return;
         }
 
-        public static IEnumerable<object[]> SourceFiles(string relativePath)
+        invalid |=
+            filename.Contains("error") ||
+            filename.Contains("invalid") && (!filename.Contains("invalid-yield-object-") && !filename.Contains("attribute-invalid-entity"));
+
+        if (!invalid)
         {
-            var fixturesPath = Path.Combine(GetFixturesPath(), relativePath);
+            parserOptions = parserOptionsFactory(true, parserOptions.RegExpParseMode);
 
-            var files = Directory.GetFiles(fixturesPath, "*.js", SearchOption.AllDirectories);
-
-            return files
-                .Select(x => new object[] { x.Substring(fixturesPath.Length + 1) })
-                .ToList();
+            var actual = ParseAndFormat(sourceType, script, parserOptions, parserFactory, conversionOptions);
+            CompareTreesAndAssert(actual, expected, metadata);
         }
-
-        internal static string GetFixturesPath()
+        else
         {
-#if NET461
-            var assemblyPath = new Uri(typeof(Fixtures).GetTypeInfo().Assembly.CodeBase).LocalPath;
-            var assemblyDirectory = new FileInfo(assemblyPath).Directory;
+            parserOptions = parserOptionsFactory(false, parserOptions.RegExpParseMode);
+
+            // TODO: check the accuracy of the message and of the location
+            Assert.Throws<ParserException>(() => ParseAndFormat(sourceType, script, parserOptions, parserFactory, conversionOptions));
+        }
+    }
+
+    public static IEnumerable<object[]> SourceFiles(string relativePath)
+    {
+        var fixturesPath = Path.Combine(GetFixturesPath(), relativePath);
+
+        var files = Directory.GetFiles(fixturesPath, "*.js", SearchOption.AllDirectories);
+
+        return files
+            .Select(x => new object[] { x.Substring(fixturesPath.Length + 1) })
+            .ToList();
+    }
+
+    internal static string GetFixturesPath()
+    {
+#if NETFRAMEWORK
+        var assemblyPath = new Uri(typeof(Fixtures).GetTypeInfo().Assembly.CodeBase).LocalPath;
+        var assemblyDirectory = new FileInfo(assemblyPath).Directory;
 #else
-            var assemblyPath = typeof(Fixtures).GetTypeInfo().Assembly.Location;
-            var assemblyDirectory = new FileInfo(assemblyPath).Directory;
+        var assemblyPath = typeof(Fixtures).GetTypeInfo().Assembly.Location;
+        var assemblyDirectory = new FileInfo(assemblyPath).Directory;
 #endif
-            var root = assemblyDirectory.Parent.Parent.Parent.FullName;
-            return root;
-        }
+        var root = assemblyDirectory?.Parent?.Parent?.Parent?.Parent?.FullName;
+        return Path.Combine(root ?? "", "test", "Esprima.Tests");
+    }
 
-        [Fact]
-        public void CommentsAreParsed()
+    private sealed class FixtureMetadata
+    {
+        public static readonly FixtureMetadata Default = new()
         {
-            var count = 0;
-            Action<Node> action = node => count++;
-            var parser = new JavaScriptParser("// this is a comment", new ParserOptions(), action);
-            parser.ParseScript();
+            TestCompatibilityMode = AstToJsonTestCompatibilityMode.None,
+            IncludesLocation = true,
+            IncludesRange = true,
+            IncludesLocationSource = false,
+            IgnoresRegex = false,
+            Skip = false,
+        };
 
-            Assert.Equal(1, count);
+        private sealed class Group
+        {
+            public HashSet<string> Flags { get; } = new();
+            public HashSet<string> Files { get; } = new();
         }
+
+        public static Dictionary<string, FixtureMetadata> ReadMetadata()
+        {
+            var fixturesDirPath = Path.Combine(GetFixturesPath(), FixturesDirName);
+            var compatListFilePath = Path.Combine(fixturesDirPath, "fixtures-metadata.json");
+
+            var baseUri = new Uri(fixturesDirPath + "/");
+
+            Group[]? groups;
+            using (var reader = new StreamReader(compatListFilePath))
+                groups = (Group[]?) JsonSerializer.CreateDefault().Deserialize(reader, typeof(Group[]));
+
+            return (groups ?? Array.Empty<Group>())
+                .SelectMany(group =>
+                {
+                    var metadata = CreateFrom(group.Flags);
+
+                    return group.Files.Select(file =>
+                    (
+                        filePath: new Uri(baseUri, file).LocalPath,
+                        metadata
+                    ));
+                })
+                .ToDictionary(item => item.filePath, item => item.metadata);
+        }
+
+        private static FixtureMetadata CreateFrom(HashSet<string> flags)
+        {
+            return new FixtureMetadata
+            {
+                TestCompatibilityMode = flags.Contains("EsprimaOrgFixture") ? AstToJsonTestCompatibilityMode.EsprimaOrg : AstToJsonTestCompatibilityMode.None,
+                IncludesLocation = flags.Contains("IncludesLocation"),
+                IncludesRange = flags.Contains("IncludesRange"),
+                IncludesLocationSource = flags.Contains("IncludesLocationSource"),
+                IncludesTokens = flags.Contains("IncludesTokens"),
+                IgnoresRegex = flags.Contains("IgnoresRegex"),
+                Skip = flags.Contains("Skip"),
+            };
+        }
+
+        private FixtureMetadata() { }
+
+        public AstToJsonTestCompatibilityMode TestCompatibilityMode { get; init; }
+        public bool IncludesLocation { get; init; }
+        public bool IncludesRange { get; init; }
+        public bool IncludesLocationSource { get; init; }
+        public bool IncludesTokens { get; init; }
+        public bool IgnoresRegex { get; init; }
+        public bool Skip { get; init; }
+
+        public AstToJsonOptions CreateConversionOptions(AstToJsonOptions defaultOptions) => defaultOptions with
+        {
+            TestCompatibilityMode = TestCompatibilityMode,
+            IncludeLineColumn = IncludesLocation,
+            IncludeRange = IncludesRange,
+            IncludeTokens = IncludesTokens,
+        };
     }
 }

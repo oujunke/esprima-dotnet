@@ -1,24 +1,23 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Expression) })]
+public sealed partial class ChainExpression : Expression
 {
-    public class ChainExpression : Expression
+    public ChainExpression(Expression expression) : base(Nodes.ChainExpression)
     {
-        /// <summary>
-        /// CallExpression | ComputedMemberExpression | StaticMemberExpression
-        /// </summary>
-        public readonly Expression Expression;
+        Expression = expression;
+    }
 
-        public ChainExpression(Expression expression) : base(Nodes.ChainExpression)
-        {
-            Expression = expression;
-        }
+    /// <remarks>
+    /// <see cref="CallExpression"/> | <see cref="ComputedMemberExpression"/>| <see cref="StaticMemberExpression"/>
+    /// </remarks>
+    public Expression Expression { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override NodeCollection ChildNodes => NodeCollection.Empty;
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitChainExpression(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ChainExpression Rewrite(Expression expression)
+    {
+        return new ChainExpression(expression);
     }
 }

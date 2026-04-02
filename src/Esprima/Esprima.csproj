@@ -1,40 +1,77 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Description>Standard-compliant ECMAScript 2019 parser (also known as JavaScript).</Description>
-    <Copyright>Sebastien Ros</Copyright>
+    <Description>Standard-compliant ECMAScript 2022 parser (also known as JavaScript).</Description>
     <AssemblyName>Esprima</AssemblyName>
     <AssemblyTitle>Esprima .NET</AssemblyTitle>
     <NeutralLanguage>en-US</NeutralLanguage>
-    <BuildNumber Condition="'$(BuildNumber)' == ''">0</BuildNumber>
-    <Authors>Sebastien Ros</Authors>
-    <TargetFrameworks>net461;netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net462;netstandard2.0;netstandard2.1</TargetFrameworks>
     <AssemblyOriginatorKeyFile>../Esprima.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
     <PackageId>Esprima</PackageId>
     <PackageTags>javascript, parser, ecmascript</PackageTags>
     <PackageProjectUrl>https://github.com/sebastienros/esprima-dotnet</PackageProjectUrl>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
-    <Version>2.0.0-beta-$(BuildNumber)</Version>
 
-    <LangVersion>latest</LangVersion>
-    <Nullable>enable</Nullable>
+    <BuildNumber Condition="'$(BuildNumber)' == ''">0</BuildNumber>
+    <VersionPrefix>3.0.5</VersionPrefix>
+    <VersionSuffix>beta-$(BuildNumber)</VersionSuffix>
+    <FileVersion>$(VersionPrefix).$(BuildNumber)</FileVersion>
 
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <!-- SkipLocalsInit -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
 
-    <DefineConstants Condition="'$(Checked)' == true or $(Configuration) == 'Debug'">$(DefineConstants);LOCATION_ASSERTS</DefineConstants>
+    <AnalysisLevel>latest-Recommended</AnalysisLevel>
 
     <DefineConstants Condition=" '$(TargetFramework)' == 'netstandard2.1'">$(DefineConstants);HAS_SPAN_PARSE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="all" />
-    <PackageReference Include="System.Memory" Version="4.5.4" Condition=" '$(TargetFramework)' != 'netstandard2.1'" />
+    <None Include="../../README.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="PolySharp" PrivateAssets="all" />
+    <PackageReference Include="System.Memory" Condition=" '$(TargetFramework)' != 'netstandard2.1'" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Esprima.SourceGenerators\Esprima.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Remove="System.Net.Http" />
+  </ItemGroup>
+
+  <!-- For checking generated output-->
+
+  <PropertyGroup>
+    <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
+  </PropertyGroup>
+
+  <!-- Stops CS0121 in VS 2022 (https://stackoverflow.com/a/70968184/8656352) -->
+  <ItemGroup Condition="'$(EmitCompilerGeneratedFiles)' == 'true'">
+    <Compile Remove="$(CompilerGeneratedFilesOutputPath)/**/*.cs" />
+    <None Include="$(CompilerGeneratedFilesOutputPath)/**/*.cs" />
+  </ItemGroup>
+
+  <!-- Configure polyfills -->
+
+  <PropertyGroup>
+    <PolySharpIncludeGeneratedTypes Condition="'$(TargetFramework)' == 'net462' OR '$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netstandard2.1'">
+      System.Runtime.CompilerServices.IsExternalInit;
+      System.Runtime.CompilerServices.SkipLocalsInitAttribute
+    </PolySharpIncludeGeneratedTypes>
+
+    <PolySharpIncludeGeneratedTypes Condition="'$(TargetFramework)' == 'net462' OR '$(TargetFramework)' == 'netstandard2.0'">
+      $(PolySharpIncludeGeneratedTypes);
+      System.Diagnostics.CodeAnalysis.DoesNotReturnAttribute;
+      System.Diagnostics.CodeAnalysis.MaybeNullWhenAttribute
+    </PolySharpIncludeGeneratedTypes>
+  </PropertyGroup>
 
 </Project>

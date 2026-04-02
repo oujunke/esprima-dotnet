@@ -1,15 +1,14 @@
-﻿namespace Esprima.Ast
-{
-    public abstract class ImportDeclarationSpecifier : Declaration
-    {
-        /// <summary>
-        /// Identifier | StringLiteral
-        /// </summary>
-        public readonly Expression Local;
+﻿using System.Runtime.CompilerServices;
 
-        protected ImportDeclarationSpecifier(Expression local, Nodes type) : base(type)
-        {
-            Local = local;
-        }
+namespace Esprima.Ast;
+
+public abstract class ImportDeclarationSpecifier : Node, IModuleSpecifier
+{
+    protected ImportDeclarationSpecifier(Identifier local, Nodes type) : base(type)
+    {
+        Local = local;
     }
+
+    public Identifier Local { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    Expression IModuleSpecifier.Local => Local;
 }

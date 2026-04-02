@@ -1,8 +1,10 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Spectre.Console;
 using Test262Harness;
@@ -14,17 +16,24 @@ public static class Program
     public static async Task<int> Main(string[] args)
     {
         var rootDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location) ?? string.Empty;
-        var projectRoot = Path.Combine(rootDirectory, "../../..");
+        var solutionRoot = Path.Combine(rootDirectory, "../../../..");
 
-        var allowListFile = Path.Combine(projectRoot, "allow-list.txt");
-        var lines = await File.ReadAllLinesAsync(allowListFile);
+        var allowListFile = new FileInfo(Path.Combine(solutionRoot, "test", "Esprima.Tests.Test262", "allow-list.txt")).FullName;
+        var lines = File.Exists(allowListFile) ? await File.ReadAllLinesAsync(allowListFile) : Array.Empty<string>();
         var knownFailing = new HashSet<string>(lines
-            .Where(x => !string.IsNullOrWhiteSpace(x) && !x.StartsWith("#"))
+            .Where(x => !string.IsNullOrWhiteSpace(x) && !x.StartsWith("#", StringComparison.Ordinal))
         );
 
-        // this should be same in both Test262Harness.settings.json and here
-        const string Sha = "08a9fc2b974f83a9835174cede20a7935f126015";
-        var stream = await Test262StreamExtensions.FromGitHub(Sha);
+        var serializerOptions = new JsonSerializerOptions { ReadCommentHandling = JsonCommentHandling.Skip };
+        var settings = JsonSerializer.Deserialize<Dictionary<string, object>>(await File.ReadAllTextAsync("Test262Harness.settings.json"), serializerOptions)!;
+        var sha = settings["SuiteGitSha"].ToString()!;
+        var excludedFeatures = ((JsonElement) settings["ExcludedFeatures"]).EnumerateArray().Select(x => x.ToString()).ToArray();
+        var stream = await Test262StreamExtensions.FromGitHub(sha);
+
+        if (excludedFeatures.Length > 0)
+        {
+            AnsiConsole.MarkupLine("Features excluded: [yellow]{0}[/]", string.Join(", ", excludedFeatures));
+        }
 
         // we materialize to give better feedback on progress
         var test262Files = new ConcurrentBag<Test262File>();
@@ -57,19 +66,34 @@ public static class Program
                 {
                     Execute = static file =>
                     {
-                        var parser = new JavaScriptParser(file.Program);
+                        var parserOptions = new ParserOptions
+                        {
+                            Tolerant = false
+                        };
+                        var parser = new JavaScriptParser(parserOptions);
                         if (file.Type == ProgramType.Script)
                         {
-                            parser.ParseScript(file.Strict);
+                            parser.ParseScript(file.Program, strict: file.Strict);
                         }
                         else
                         {
-                            parser.ParseModule();
+                            parser.ParseModule(file.Program);
                         }
                     },
-                    IsIgnored = file => knownFailing.Contains(file.ToString()),
+                    IsIgnored = file => file.Features.IndexOfAny(excludedFeatures.AsSpan()) != -1 || knownFailing.Contains(file.ToString()),
                     IsParseError = exception => exception is ParserException,
-                    ShouldThrow = file => file.NegativeTestCase?.Type == ExpectedErrorType.SyntaxError || file.NegativeTestCase?.Phase == TestingPhase.Parse,
+                    ShouldThrow = file =>
+                    {
+                        var negativeTestCase = file.NegativeTestCase;
+                        if (negativeTestCase is null)
+                        {
+                            return false;
+                        }
+
+                        return negativeTestCase.Type == ExpectedErrorType.SyntaxError
+                               && negativeTestCase.Phase != TestingPhase.Resolution
+                               && negativeTestCase.Phase != TestingPhase.Runtime;
+                    },
                     OnTestExecuted = _ => testTask.Increment(1)
                 };
 
@@ -98,7 +122,7 @@ public static class Program
     private static void Report(TestExecutionSummary testExecutionSummary)
     {
         AnsiConsole.WriteLine();
-        AnsiConsole.Write(new Rule("[green]Summary:[/]") { Alignment = Justify.Left });
+        AnsiConsole.Write(new Rule("[green]Summary:[/]") { Justification = Justify.Left });
 
         AnsiConsole.MarkupLine(" [green]:check_mark: {0,5}[/] valid programs parsed without error", testExecutionSummary.Allowed.Success.Count);
         AnsiConsole.MarkupLine(" [green]:check_mark: {0,5}[/] invalid programs produced a parsing error", testExecutionSummary.Allowed.Failure.Count);
@@ -140,7 +164,7 @@ public static class Program
     private static void WriteProblemHeading(string title)
     {
         AnsiConsole.WriteLine();
-        AnsiConsole.Write(new Rule($"[red]{title}[/]") { Alignment = Justify.Left });
+        AnsiConsole.Write(new Rule($"[red]{title}[/]") { Justification = Justify.Left });
     }
 
     private static void PrintDetails<T>(IReadOnlyCollection<T> items, int maxCount = 5)

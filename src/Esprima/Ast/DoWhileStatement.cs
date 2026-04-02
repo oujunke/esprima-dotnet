@@ -1,23 +1,22 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Body), nameof(Test) })]
+public sealed partial class DoWhileStatement : Statement
 {
-    public sealed class DoWhileStatement : Statement
+    public DoWhileStatement(Statement body, Expression test) : base(Nodes.DoWhileStatement)
     {
-        public readonly Statement Body;
-        public readonly Expression Test;
+        Body = body;
+        Test = test;
+    }
 
-        public DoWhileStatement(Statement body, Expression test) : base(Nodes.DoWhileStatement)
-        {
-            Body = body;
-            Test = test;
-        }
+    public Statement Body { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public Expression Test { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override NodeCollection ChildNodes => new(Body, Test);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitDoWhileStatement(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static DoWhileStatement Rewrite(Statement body, Expression test)
+    {
+        return new DoWhileStatement(body, test);
     }
 }

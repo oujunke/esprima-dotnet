@@ -1,21 +1,20 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Argument) })]
+public sealed partial class ReturnStatement : Statement
 {
-    public sealed class ReturnStatement : Statement
+    public ReturnStatement(Expression? argument) : base(Nodes.ReturnStatement)
     {
-        public readonly Expression? Argument;
+        Argument = argument;
+    }
 
-        public ReturnStatement(Expression? argument) : base(Nodes.ReturnStatement)
-        {
-            Argument = argument;
-        }
+    public Expression? Argument { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override NodeCollection ChildNodes => new(Argument);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitReturnStatement(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ReturnStatement Rewrite(Expression? argument)
+    {
+        return new ReturnStatement(argument);
     }
 }

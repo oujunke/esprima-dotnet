@@ -1,31 +1,29 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Decorators), nameof(Id), nameof(SuperClass), nameof(Body) })]
+public sealed partial class ClassDeclaration : Declaration, IClass
 {
-    public sealed class ClassDeclaration : Declaration, IClass
+    private readonly NodeList<Decorator> _decorators;
+
+    public ClassDeclaration(Identifier? id, Expression? superClass, ClassBody body, in NodeList<Decorator> decorators) :
+        base(Nodes.ClassDeclaration)
     {
-        public readonly Identifier? Id;
-        Identifier? IClass.Id => Id;
+        Id = id;
+        SuperClass = superClass;
+        Body = body;
+        _decorators = decorators;
+    }
 
-        public readonly Expression? SuperClass; // Identifier || CallExpression
-        Expression? IClass.SuperClass => SuperClass;
+    public Identifier? Id { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public Expression? SuperClass { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public ClassBody Body { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public ref readonly NodeList<Decorator> Decorators { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => ref _decorators; }
 
-        public readonly ClassBody Body;
-        ClassBody IClass.Body => Body;
-
-        public ClassDeclaration(Identifier? id, Expression? superClass, ClassBody body) :
-            base(Nodes.ClassDeclaration)
-        {
-            Id = id;
-            SuperClass = superClass;
-            Body = body;
-        }
-
-        public override NodeCollection ChildNodes => new(Id, SuperClass, Body);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitClassDeclaration(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ClassDeclaration Rewrite(in NodeList<Decorator> decorators, Identifier? id, Expression? superClass, ClassBody body)
+    {
+        return new ClassDeclaration(id, superClass, body, decorators);
     }
 }

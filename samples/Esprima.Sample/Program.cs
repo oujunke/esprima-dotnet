@@ -1,46 +1,41 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using Esprima.Utils;
-using Newtonsoft.Json;
+using System.Linq;
+using Esprima.Sample.Commands;
+using McMaster.Extensions.CommandLineUtils;
 
-namespace Esprima.Sample
+namespace Esprima.Sample;
+
+[Command("esprimatest", Description = "A command line tool for testing Esprima.NET features.",
+    UnrecognizedArgumentHandling = UnrecognizedArgumentHandling.StopParsingAndCollect)]
+[HelpOption(Inherited = true)]
+[Subcommand(typeof(ParseCommand), typeof(TokenizeCommand))]
+public class Program
 {
-    public class Program
+    public static int Main(string[] args)
     {
-        public static void Main(string[] args)
+        var console = PhysicalConsole.Singleton;
+
+        using var app = new CommandLineApplication<Program>(console, Environment.CurrentDirectory);
+        app.Conventions.UseDefaultConventions();
+        try
         {
-            var scanner = new Scanner(@"
-""use strict"";
-try { } catch (evil) { }
-
-");
-            Tokenize(scanner);
-            //Parse(scanner);
+            return app.Execute(args);
         }
-
-        private static void Tokenize(Scanner scanner)
+        catch (ParserException ex)
         {
-            var tokens = new List<Token>();
-            Token token;
-
-            do
-            {
-                scanner.ScanComments();
-                token = scanner.Lex();
-                tokens.Add(token);
-            } while (token.Type != TokenType.EOF);
-
-            Console.WriteLine(JsonConvert.SerializeObject(tokens, Formatting.Indented));
+            console.Error.WriteLine(ex.LineNumber > 0 ? $"{ex.LineNumber},{ex.Column}: {ex.Description}" : ex.Description);
+            return -1;
         }
-
-        private static void Parse(string source, TextWriter output)
+        catch (CommandParsingException ex)
         {
-            var parser = new JavaScriptParser(source);
-            var program = parser.ParseScript();
-
-            program.WriteJson(output);
-            Console.WriteLine();
+            console.Error.WriteLine(ex.Message);
+            return 1;
         }
+    }
+
+    public int OnExecute(CommandLineApplication app)
+    {
+        var args = app.RemainingArguments.Prepend(ParseCommand.CommandName).ToArray();
+        return app.Execute(args);
     }
 }

@@ -1,30 +1,30 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Local), nameof(Exported) })]
+public sealed partial class ExportSpecifier : Node, IModuleSpecifier
 {
-    public sealed class ExportSpecifier : Statement
+    public ExportSpecifier(Expression local, Expression exported) : base(Nodes.ExportSpecifier)
     {
-        /// <summary>
-        /// Identifier | StringLiteral
-        /// </summary>
-        public readonly Expression Exported;
+        Local = local;
+        Exported = exported;
+    }
 
-        /// <summary>
-        /// Identifier | StringLiteral
-        /// </summary>
-        public readonly Expression Local;
+    /// <remarks>
+    /// <see cref="Identifier"/> | <see cref="Literal"/> (string)
+    /// </remarks>
+    public Expression Local { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    /// <remarks>
+    /// <see cref="Identifier"/> | <see cref="Literal"/> (string)
+    /// </remarks>
+    public Expression Exported { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public ExportSpecifier(Expression local, Expression exported) : base(Nodes.ExportSpecifier)
-        {
-            Exported = exported;
-            Local = local;
-        }
+    internal override Node? NextChildNode(ref ChildNodes.Enumerator enumerator) => enumerator.MoveNextExportSpecifier(Local, Exported);
 
-        public override NodeCollection ChildNodes => new(Exported, Local);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitExportSpecifier(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ExportSpecifier Rewrite(Expression local, Expression exported)
+    {
+        return new ExportSpecifier(local, exported);
     }
 }

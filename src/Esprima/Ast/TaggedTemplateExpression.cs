@@ -1,23 +1,22 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Tag), nameof(Quasi) })]
+public sealed partial class TaggedTemplateExpression : Expression
 {
-    public sealed class TaggedTemplateExpression : Expression
+    public TaggedTemplateExpression(Expression tag, TemplateLiteral quasi) : base(Nodes.TaggedTemplateExpression)
     {
-        public readonly Expression Tag;
-        public readonly TemplateLiteral Quasi;
+        Tag = tag;
+        Quasi = quasi;
+    }
 
-        public TaggedTemplateExpression(Expression tag, TemplateLiteral quasi) : base(Nodes.TaggedTemplateExpression)
-        {
-            Tag = tag;
-            Quasi = quasi;
-        }
+    public Expression Tag { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public TemplateLiteral Quasi { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override NodeCollection ChildNodes => new(Tag, Quasi);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitTaggedTemplateExpression(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static TaggedTemplateExpression Rewrite(Expression tag, TemplateLiteral quasi)
+    {
+        return new TaggedTemplateExpression(tag, quasi);
     }
 }

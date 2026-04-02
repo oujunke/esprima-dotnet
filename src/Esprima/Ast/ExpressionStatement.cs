@@ -1,21 +1,19 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Expression) }, SealOverrideMethods = true)]
+public partial class ExpressionStatement : Statement
 {
-    public class ExpressionStatement : Statement
+    public ExpressionStatement(Expression expression) : base(Nodes.ExpressionStatement)
     {
-        public readonly Expression Expression;
+        Expression = expression;
+    }
 
-        public ExpressionStatement(Expression expression) : base(Nodes.ExpressionStatement)
-        {
-            Expression = expression;
-        }
+    public Expression Expression { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override NodeCollection ChildNodes => new(Expression);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitExpressionStatement(this);
-        }
+    protected virtual ExpressionStatement Rewrite(Expression expression)
+    {
+        return new ExpressionStatement(expression);
     }
 }

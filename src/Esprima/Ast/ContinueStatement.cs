@@ -1,21 +1,20 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Label) })]
+public sealed partial class ContinueStatement : Statement
 {
-    public sealed class ContinueStatement : Statement
+    public ContinueStatement(Identifier? label) : base(Nodes.ContinueStatement)
     {
-        public readonly Identifier? Label;
+        Label = label;
+    }
 
-        public ContinueStatement(Identifier? label) : base(Nodes.ContinueStatement)
-        {
-            Label = label;
-        }
+    public Identifier? Label { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override NodeCollection ChildNodes => new(Label);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitContinueStatement(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ContinueStatement Rewrite(Identifier? label)
+    {
+        return new ContinueStatement(label);
     }
 }

@@ -1,18 +1,9 @@
-﻿using Esprima.Utils;
+﻿namespace Esprima.Ast;
 
-namespace Esprima.Ast
+[VisitableNode]
+public sealed partial class Super : Expression
 {
-    public sealed class Super : Expression
+    public Super() : base(Nodes.Super)
     {
-        public Super() : base(Nodes.Super)
-        {
-        }
-
-        public override NodeCollection ChildNodes => NodeCollection.Empty;
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitSuper(this);
-        }
     }
 }

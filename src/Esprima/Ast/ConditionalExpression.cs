@@ -1,28 +1,27 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Test), nameof(Consequent), nameof(Alternate) })]
+public sealed partial class ConditionalExpression : Expression
 {
-    public sealed class ConditionalExpression : Expression
+    public ConditionalExpression(
+        Expression test,
+        Expression consequent,
+        Expression alternate) : base(Nodes.ConditionalExpression)
     {
-        public readonly Expression Test;
-        public readonly Expression Consequent;
-        public readonly Expression Alternate;
+        Test = test;
+        Consequent = consequent;
+        Alternate = alternate;
+    }
 
-        public ConditionalExpression(
-            Expression test,
-            Expression consequent,
-            Expression alternate) : base(Nodes.ConditionalExpression)
-        {
-            Test = test;
-            Consequent = consequent;
-            Alternate = alternate;
-        }
+    public Expression Test { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public Expression Consequent { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public Expression Alternate { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override NodeCollection ChildNodes => new(Test, Consequent, Alternate);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitConditionalExpression(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ConditionalExpression Rewrite(Expression test, Expression consequent, Expression alternate)
+    {
+        return new ConditionalExpression(test, consequent, alternate);
     }
 }

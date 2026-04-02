@@ -1,18 +1,9 @@
-﻿using Esprima.Utils;
+﻿namespace Esprima.Ast;
 
-namespace Esprima.Ast
+[VisitableNode]
+public sealed partial class ThisExpression : Expression
 {
-    public sealed class ThisExpression : Expression
+    public ThisExpression() : base(Nodes.ThisExpression)
     {
-        public ThisExpression() : base(Nodes.ThisExpression)
-        {
-        }
-
-        public override NodeCollection ChildNodes => NodeCollection.Empty;
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitThisExpression(this);
-        }
     }
 }

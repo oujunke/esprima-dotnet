@@ -1,31 +1,33 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Exported), nameof(Source), nameof(Attributes) })]
+public sealed partial class ExportAllDeclaration : ExportDeclaration
 {
-    public sealed class ExportAllDeclaration : ExportDeclaration
+    private readonly NodeList<ImportAttribute> _attributes;
+
+    public ExportAllDeclaration(Literal source) : this(source, null, new NodeList<ImportAttribute>())
     {
-        public readonly Literal Source;
+    }
 
-        /// <summary>
-        /// Identifier | StringLiteral
-        /// </summary>
-        public readonly Expression? Exported;
+    public ExportAllDeclaration(Literal source, Expression? exported, in NodeList<ImportAttribute> attributes) : base(Nodes.ExportAllDeclaration)
+    {
+        Source = source;
+        Exported = exported;
+        _attributes = attributes;
+    }
 
-        public ExportAllDeclaration(Literal source) : this(source, null)
-        {
-        }
+    public Literal Source { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    /// <remarks>
+    /// <see cref="Identifier"/> | <see cref="Literal"/> (string)
+    /// </remarks>
+    public Expression? Exported { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public ref readonly NodeList<ImportAttribute> Attributes { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => ref _attributes; }
 
-        public ExportAllDeclaration(Literal source, Expression? exported) : base(Nodes.ExportAllDeclaration)
-        {
-            Source = source;
-            Exported = exported;
-        }
-
-        public override NodeCollection ChildNodes => new(Source, Exported);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitExportAllDeclaration(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ExportAllDeclaration Rewrite(Expression? exported, Literal source, in NodeList<ImportAttribute> attributes)
+    {
+        return new ExportAllDeclaration(source, exported, attributes);
     }
 }

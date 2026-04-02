@@ -1,101 +1,134 @@
-﻿using Esprima.Utils;
-using static Esprima.EsprimaExceptionHelper;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+public enum BinaryOperator
 {
-    public enum BinaryOperator
+    Plus,
+    Minus,
+    Times,
+    Divide,
+    Modulo,
+    Equal,
+    NotEqual,
+    Greater,
+    GreaterOrEqual,
+    Less,
+    LessOrEqual,
+    StrictlyEqual,
+    StrictlyNotEqual,
+    BitwiseAnd,
+    BitwiseOr,
+    BitwiseXor,
+    LeftShift,
+    RightShift,
+    UnsignedRightShift,
+    InstanceOf,
+    In,
+    LogicalAnd,
+    LogicalOr,
+    Exponentiation,
+    NullishCoalescing
+}
+
+[VisitableNode(ChildProperties = new[] { nameof(Left), nameof(Right) }, SealOverrideMethods = true)]
+public partial class BinaryExpression : Expression
+{
+    public BinaryExpression(string op, Expression left, Expression right) : this(ParseBinaryOperator(op), left, right)
     {
-        [EnumMember(Value = "+")] Plus,
-        [EnumMember(Value = "-")] Minus,
-        [EnumMember(Value = "*")] Times,
-        [EnumMember(Value = "/")] Divide,
-        [EnumMember(Value = "%")] Modulo,
-        [EnumMember(Value = "==")] Equal,
-        [EnumMember(Value = "!=")] NotEqual,
-        [EnumMember(Value = ">")] Greater,
-        [EnumMember(Value = ">=")] GreaterOrEqual,
-        [EnumMember(Value = "<")] Less,
-        [EnumMember(Value = "<=")] LessOrEqual,
-        [EnumMember(Value = "===")] StrictlyEqual,
-        [EnumMember(Value = "!==")] StricltyNotEqual,
-        [EnumMember(Value = "&")] BitwiseAnd,
-        [EnumMember(Value = "|")] BitwiseOr,
-        [EnumMember(Value = "^")] BitwiseXOr,
-        [EnumMember(Value = "<<")] LeftShift,
-        [EnumMember(Value = ">>")] RightShift,
-        [EnumMember(Value = ">>>")] UnsignedRightShift,
-        [EnumMember(Value = "instanceof")] InstanceOf,
-        [EnumMember(Value = "in")] In,
-        [EnumMember(Value = "&&")] LogicalAnd,
-        [EnumMember(Value = "||")] LogicalOr,
-        [EnumMember(Value = "**")] Exponentiation,
-        [EnumMember(Value = "??")] NullishCoalescing
     }
 
-    public sealed class BinaryExpression : Expression
+    public BinaryExpression(BinaryOperator op, Expression left, Expression right) : this(Nodes.BinaryExpression, op, left, right)
     {
-        public readonly BinaryOperator Operator;
-        public readonly Expression Left;
-        public readonly Expression Right;
-
-        public BinaryExpression(string op, Expression left, Expression right) :
-            this(ParseBinaryOperator(op), left, right)
+        if (LogicalExpression.IsLogicalOperator(op))
         {
+            throw new ArgumentOutOfRangeException(nameof(op), op, "Value must be a non-logical operator.");
         }
+    }
 
-        private BinaryExpression(BinaryOperator op, Expression left, Expression right) :
-            base(op == BinaryOperator.LogicalAnd || op == BinaryOperator.LogicalOr || op == BinaryOperator.NullishCoalescing ? Nodes.LogicalExpression : Nodes.BinaryExpression)
+    private protected BinaryExpression(Nodes type, string op, Expression left, Expression right) : this(type, ParseBinaryOperator(op), left, right)
+    {
+    }
+
+    private protected BinaryExpression(Nodes type, BinaryOperator op, Expression left, Expression right) : base(type)
+    {
+        Operator = op;
+        Left = left;
+        Right = right;
+    }
+
+    public static BinaryOperator ParseBinaryOperator(string op)
+    {
+        return op switch
         {
-            Operator = op;
-            Left = left;
-            Right = right;
-        }
+            "+" => BinaryOperator.Plus,
+            "-" => BinaryOperator.Minus,
+            "*" => BinaryOperator.Times,
+            "/" => BinaryOperator.Divide,
+            "%" => BinaryOperator.Modulo,
+            "==" => BinaryOperator.Equal,
+            "!=" => BinaryOperator.NotEqual,
+            ">" => BinaryOperator.Greater,
+            ">=" => BinaryOperator.GreaterOrEqual,
+            "<" => BinaryOperator.Less,
+            "<=" => BinaryOperator.LessOrEqual,
+            "===" => BinaryOperator.StrictlyEqual,
+            "!==" => BinaryOperator.StrictlyNotEqual,
+            "&" => BinaryOperator.BitwiseAnd,
+            "|" => BinaryOperator.BitwiseOr,
+            "^" => BinaryOperator.BitwiseXor,
+            "<<" => BinaryOperator.LeftShift,
+            ">>" => BinaryOperator.RightShift,
+            ">>>" => BinaryOperator.UnsignedRightShift,
+            "instanceof" => BinaryOperator.InstanceOf,
+            "in" => BinaryOperator.In,
+            "&&" => BinaryOperator.LogicalAnd,
+            "||" => BinaryOperator.LogicalOr,
+            "**" => BinaryOperator.Exponentiation,
+            "??" => BinaryOperator.NullishCoalescing,
+            _ => throw new ArgumentOutOfRangeException(nameof(op), op, "Invalid binary operator.")
+        };
+    }
 
-        public static BinaryOperator ParseBinaryOperator(string op)
+    public static string GetBinaryOperatorToken(BinaryOperator op)
+    {
+        return op switch
         {
-            return op switch
-            {
-                "+" => BinaryOperator.Plus,
-                "-" => BinaryOperator.Minus,
-                "*" => BinaryOperator.Times,
-                "/" => BinaryOperator.Divide,
-                "%" => BinaryOperator.Modulo,
-                "==" => BinaryOperator.Equal,
-                "!=" => BinaryOperator.NotEqual,
-                ">" => BinaryOperator.Greater,
-                ">=" => BinaryOperator.GreaterOrEqual,
-                "<" => BinaryOperator.Less,
-                "<=" => BinaryOperator.LessOrEqual,
-                "===" => BinaryOperator.StrictlyEqual,
-                "!==" => BinaryOperator.StricltyNotEqual,
-                "&" => BinaryOperator.BitwiseAnd,
-                "|" => BinaryOperator.BitwiseOr,
-                "^" => BinaryOperator.BitwiseXOr,
-                "<<" => BinaryOperator.LeftShift,
-                ">>" => BinaryOperator.RightShift,
-                ">>>" => BinaryOperator.UnsignedRightShift,
-                "instanceof" => BinaryOperator.InstanceOf,
-                "in" => BinaryOperator.In,
-                "&&" => BinaryOperator.LogicalAnd,
-                "||" => BinaryOperator.LogicalOr,
-                "**" => BinaryOperator.Exponentiation,
-                "??" => BinaryOperator.NullishCoalescing,
-                _ => ThrowArgumentOutOfRangeException<BinaryOperator>(nameof(op), "Invalid binary operator: " + op)
-            };
-        }
+            BinaryOperator.Plus => "+",
+            BinaryOperator.Minus => "-",
+            BinaryOperator.Times => "*",
+            BinaryOperator.Divide => "/",
+            BinaryOperator.Modulo => "%",
+            BinaryOperator.Equal => "==",
+            BinaryOperator.NotEqual => "!=",
+            BinaryOperator.Greater => ">",
+            BinaryOperator.GreaterOrEqual => ">=",
+            BinaryOperator.Less => "<",
+            BinaryOperator.LessOrEqual => "<=",
+            BinaryOperator.StrictlyEqual => "===",
+            BinaryOperator.StrictlyNotEqual => "!==",
+            BinaryOperator.BitwiseAnd => "&",
+            BinaryOperator.BitwiseOr => "|",
+            BinaryOperator.BitwiseXor => "^",
+            BinaryOperator.LeftShift => "<<",
+            BinaryOperator.RightShift => ">>",
+            BinaryOperator.UnsignedRightShift => ">>>",
+            BinaryOperator.InstanceOf => "instanceof",
+            BinaryOperator.In => "in",
+            BinaryOperator.LogicalAnd => "&&",
+            BinaryOperator.LogicalOr => "||",
+            BinaryOperator.Exponentiation => "**",
+            BinaryOperator.NullishCoalescing => "??",
+            _ => throw new ArgumentOutOfRangeException(nameof(op), op, "Invalid binary operator.")
+        };
+    }
 
-        public override NodeCollection ChildNodes => new(Left, Right);
+    public BinaryOperator Operator { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public Expression Left { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public Expression Right { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            if (Type == Nodes.LogicalExpression)
-            {
-                visitor.VisitLogicalExpression(this);
-            }
-            else
-            {
-                visitor.VisitBinaryExpression(this);
-            }
-        }
+    protected virtual BinaryExpression Rewrite(Expression left, Expression right)
+    {
+        return new BinaryExpression(Operator, left, right);
     }
 }

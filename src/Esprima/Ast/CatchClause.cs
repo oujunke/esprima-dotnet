@@ -1,24 +1,26 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Param), nameof(Body) })]
+public sealed partial class CatchClause : Node
 {
-    public sealed class CatchClause : Statement
+    public CatchClause(Node? param, BlockStatement body) :
+        base(Nodes.CatchClause)
     {
-        public readonly Expression? Param; // BindingIdentifier | BindingPattern | null;
-        public readonly BlockStatement Body;
+        Param = param;
+        Body = body;
+    }
 
-        public CatchClause(Expression? param, BlockStatement body) :
-            base(Nodes.CatchClause)
-        {
-            Param = param;
-            Body = body;
-        }
+    /// <remarks>
+    /// <see cref="Identifier"/> | <see cref="BindingPattern"/>
+    /// </remarks>
+    public Node? Param { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public BlockStatement Body { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override NodeCollection ChildNodes => new(Param, Body);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitCatchClause(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static CatchClause Rewrite(Node? param, BlockStatement body)
+    {
+        return new CatchClause(param, body);
     }
 }

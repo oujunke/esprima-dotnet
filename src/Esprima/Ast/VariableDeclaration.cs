@@ -1,28 +1,38 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Declarations) })]
+public sealed partial class VariableDeclaration : Declaration
 {
-    public sealed class VariableDeclaration : Declaration
+    public static string GetVariableDeclarationKindToken(VariableDeclarationKind kind)
     {
-        private readonly NodeList<VariableDeclarator> _declarations;
-        public readonly VariableDeclarationKind Kind;
-
-        public VariableDeclaration(
-            in NodeList<VariableDeclarator> declarations,
-            VariableDeclarationKind kind)
-            : base(Nodes.VariableDeclaration)
+        return kind switch
         {
-            _declarations = declarations;
-            Kind = kind;
-        }
+            VariableDeclarationKind.Var => "var",
+            VariableDeclarationKind.Let => "let",
+            VariableDeclarationKind.Const => "const",
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Invalid variable declaration kind.")
+        };
+    }
 
-        public ref readonly NodeList<VariableDeclarator> Declarations => ref _declarations;
+    private readonly NodeList<VariableDeclarator> _declarations;
 
-        public override NodeCollection ChildNodes => GenericChildNodeYield.Yield(_declarations);
+    public VariableDeclaration(
+        in NodeList<VariableDeclarator> declarations,
+        VariableDeclarationKind kind)
+        : base(Nodes.VariableDeclaration)
+    {
+        _declarations = declarations;
+        Kind = kind;
+    }
 
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitVariableDeclaration(this);
-        }
+    public ref readonly NodeList<VariableDeclarator> Declarations { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => ref _declarations; }
+    public VariableDeclarationKind Kind { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private VariableDeclaration Rewrite(in NodeList<VariableDeclarator> declarations)
+    {
+        return new VariableDeclaration(declarations, Kind);
     }
 }

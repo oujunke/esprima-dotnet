@@ -1,21 +1,20 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Argument) })]
+public sealed partial class AwaitExpression : Expression
 {
-    public sealed class AwaitExpression : Expression
+    public AwaitExpression(Expression argument) : base(Nodes.AwaitExpression)
     {
-        public readonly Expression Argument;
+        Argument = argument;
+    }
 
-        public AwaitExpression(Expression argument) : base(Nodes.AwaitExpression)
-        {
-            Argument = argument;
-        }
+    public Expression Argument { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override NodeCollection ChildNodes => new(Argument);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitAwaitExpression(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static AwaitExpression Rewrite(Expression argument)
+    {
+        return new AwaitExpression(argument);
     }
 }

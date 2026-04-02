@@ -1,21 +1,14 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode]
+public sealed partial class PrivateIdentifier : Expression
 {
-    public sealed class PrivateIdentifier : Expression
+    public PrivateIdentifier(string name) : base(Nodes.PrivateIdentifier)
     {
-        public readonly string? Name;
-
-        public PrivateIdentifier(string? name) : base(Nodes.PrivateIdentifier)
-        {
-            Name = name;
-        }
-
-        public override NodeCollection ChildNodes => NodeCollection.Empty;
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitPrivateIdentifier(this);
-        }
+        Name = name;
     }
+
+    public string Name { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 }

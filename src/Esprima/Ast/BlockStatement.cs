@@ -1,28 +1,22 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Body) })]
+public sealed partial class BlockStatement : Statement
 {
-    public class BlockStatement : Statement
+    private readonly NodeList<Statement> _body;
+
+    public BlockStatement(in NodeList<Statement> body) : base(Nodes.BlockStatement)
     {
-        private readonly NodeList<Statement> _body;
+        _body = body;
+    }
 
-        public BlockStatement(in NodeList<Statement> body) : base(Nodes.BlockStatement)
-        {
-            _body = body;
-        }
+    public ref readonly NodeList<Statement> Body { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => ref _body; }
 
-        internal BlockStatement(in NodeList<Statement> body, Nodes type) : base(type)
-        {
-            _body = body;
-        }
-
-        public ref readonly NodeList<Statement> Body => ref _body;
-
-        public override NodeCollection ChildNodes => GenericChildNodeYield.Yield(_body);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitBlockStatement(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static BlockStatement Rewrite(in NodeList<Statement> body)
+    {
+        return new BlockStatement(body);
     }
 }

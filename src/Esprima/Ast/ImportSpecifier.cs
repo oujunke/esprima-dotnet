@@ -1,24 +1,25 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Imported), nameof(Local) })]
+public sealed partial class ImportSpecifier : ImportDeclarationSpecifier
 {
-    public sealed class ImportSpecifier : ImportDeclarationSpecifier
+    public ImportSpecifier(Identifier local, Expression imported) : base(local, Nodes.ImportSpecifier)
     {
-        /// <summary>
-        /// Identifier | StringLiteral
-        /// </summary>
-        public readonly Expression Imported;
+        Imported = imported;
+    }
 
-        public ImportSpecifier(Expression local, Expression imported) : base(local, Nodes.ImportSpecifier)
-        {
-            Imported = imported;
-        }
+    /// <remarks>
+    /// <see cref="Identifier"/> | <see cref="Literal"/> (string)
+    /// </remarks>
+    public Expression Imported { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override NodeCollection ChildNodes => new(Local, Imported);
+    internal override Node? NextChildNode(ref ChildNodes.Enumerator enumerator) => enumerator.MoveNextImportSpecifier(Imported, Local);
 
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitImportSpecifier(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ImportSpecifier Rewrite(Expression imported, Identifier local)
+    {
+        return new ImportSpecifier(local, imported);
     }
 }

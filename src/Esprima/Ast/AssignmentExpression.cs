@@ -1,77 +1,108 @@
-﻿using Esprima.Utils;
-using static Esprima.EsprimaExceptionHelper;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+public enum AssignmentOperator
 {
-    public enum AssignmentOperator
+    Assign,
+    PlusAssign,
+    MinusAssign,
+    TimesAssign,
+    DivideAssign,
+    ModuloAssign,
+    BitwiseAndAssign,
+    BitwiseOrAssign,
+    BitwiseXorAssign,
+    LeftShiftAssign,
+    RightShiftAssign,
+    UnsignedRightShiftAssign,
+    ExponentiationAssign,
+    NullishAssign,
+    AndAssign,
+    OrAssign
+}
+
+[VisitableNode(ChildProperties = new[] { nameof(Left), nameof(Right) })]
+public sealed partial class AssignmentExpression : Expression
+{
+    public AssignmentExpression(
+        string op,
+        Node left,
+        Expression right) :
+        this(ParseAssignmentOperator(op), left, right)
     {
-        [EnumMember(Value = "=")] Assign,
-        [EnumMember(Value = "+=")] PlusAssign,
-        [EnumMember(Value = "-=")] MinusAssign,
-        [EnumMember(Value = "*=")] TimesAssign,
-        [EnumMember(Value = "/=")] DivideAssign,
-        [EnumMember(Value = "%=")] ModuloAssign,
-        [EnumMember(Value = "&=")] BitwiseAndAssign,
-        [EnumMember(Value = "|=")] BitwiseOrAssign,
-        [EnumMember(Value = "^=")] BitwiseXOrAssign,
-        [EnumMember(Value = "<<=")] LeftShiftAssign,
-        [EnumMember(Value = ">>=")] RightShiftAssign,
-        [EnumMember(Value = ">>>=")] UnsignedRightShiftAssign,
-        [EnumMember(Value = "**=")] ExponentiationAssign,
-        [EnumMember(Value = "??=")] NullishAssign,
-        [EnumMember(Value = "&&=")] AndAssign,
-        [EnumMember(Value = "||=")] OrAssign
     }
 
-    public sealed class AssignmentExpression : Expression
+    public AssignmentExpression(
+        AssignmentOperator op,
+        Node left,
+        Expression right) :
+        base(Nodes.AssignmentExpression)
     {
-        public readonly AssignmentOperator Operator;
+        Operator = op;
+        Left = left;
+        Right = right;
+    }
 
-        // Can be something else than Expression (ObjectPattern, ArrayPattern) in case of destructuring assignment
-        public readonly Expression Left;
-        public readonly Expression Right;
-
-        public AssignmentExpression(
-            string op,
-            Expression left,
-            Expression right) :
-            base(Nodes.AssignmentExpression)
+    public static AssignmentOperator ParseAssignmentOperator(string op)
+    {
+        return op switch
         {
-            Operator = ParseAssignmentOperator(op);
-            Left = left;
-            Right = right;
-        }
+            "=" => AssignmentOperator.Assign,
+            "+=" => AssignmentOperator.PlusAssign,
+            "-=" => AssignmentOperator.MinusAssign,
+            "*=" => AssignmentOperator.TimesAssign,
+            "/=" => AssignmentOperator.DivideAssign,
+            "%=" => AssignmentOperator.ModuloAssign,
+            "&=" => AssignmentOperator.BitwiseAndAssign,
+            "|=" => AssignmentOperator.BitwiseOrAssign,
+            "^=" => AssignmentOperator.BitwiseXorAssign,
+            "<<=" => AssignmentOperator.LeftShiftAssign,
+            ">>=" => AssignmentOperator.RightShiftAssign,
+            ">>>=" => AssignmentOperator.UnsignedRightShiftAssign,
+            "**=" => AssignmentOperator.ExponentiationAssign,
+            "??=" => AssignmentOperator.NullishAssign,
+            "&&=" => AssignmentOperator.AndAssign,
+            "||=" => AssignmentOperator.OrAssign,
+            _ => throw new ArgumentOutOfRangeException(nameof(op), op, "Invalid assignment operator.")
+        };
+    }
 
-
-        public static AssignmentOperator ParseAssignmentOperator(string op)
+    public static string GetAssignmentOperatorToken(AssignmentOperator op)
+    {
+        return op switch
         {
-            return op switch
-            {
-                "=" => AssignmentOperator.Assign,
-                "+=" => AssignmentOperator.PlusAssign,
-                "-=" => AssignmentOperator.MinusAssign,
-                "*=" => AssignmentOperator.TimesAssign,
-                "/=" => AssignmentOperator.DivideAssign,
-                "%=" => AssignmentOperator.ModuloAssign,
-                "&=" => AssignmentOperator.BitwiseAndAssign,
-                "|=" => AssignmentOperator.BitwiseOrAssign,
-                "^=" => AssignmentOperator.BitwiseXOrAssign,
-                "**=" => AssignmentOperator.ExponentiationAssign,
-                "<<=" => AssignmentOperator.LeftShiftAssign,
-                ">>=" => AssignmentOperator.RightShiftAssign,
-                ">>>=" => AssignmentOperator.UnsignedRightShiftAssign,
-                "??=" => AssignmentOperator.NullishAssign,
-                "&&=" => AssignmentOperator.AndAssign,
-                "||=" => AssignmentOperator.OrAssign,
-                _ => ThrowArgumentOutOfRangeException<AssignmentOperator>(nameof(op), "Invalid assignment operator: " + op)
-            };
-        }
+            AssignmentOperator.Assign => "=",
+            AssignmentOperator.PlusAssign => "+=",
+            AssignmentOperator.MinusAssign => "-=",
+            AssignmentOperator.TimesAssign => "*=",
+            AssignmentOperator.DivideAssign => "/=",
+            AssignmentOperator.ModuloAssign => "%=",
+            AssignmentOperator.BitwiseAndAssign => "&=",
+            AssignmentOperator.BitwiseOrAssign => "|=",
+            AssignmentOperator.BitwiseXorAssign => "^=",
+            AssignmentOperator.LeftShiftAssign => "<<=",
+            AssignmentOperator.RightShiftAssign => ">>=",
+            AssignmentOperator.UnsignedRightShiftAssign => ">>>=",
+            AssignmentOperator.ExponentiationAssign => "**=",
+            AssignmentOperator.NullishAssign => "??=",
+            AssignmentOperator.AndAssign => "&&=",
+            AssignmentOperator.OrAssign => "||=",
+            _ => throw new ArgumentOutOfRangeException(nameof(op), op, "Invalid assignment operator.")
+        };
+    }
 
-        public override NodeCollection ChildNodes => new(Left, Right);
+    public AssignmentOperator Operator { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitAssignmentExpression(this);
-        }
+    /// <remarks>
+    /// <see cref="Identifier"/> | <see cref="MemberExpression"/> | <see cref="BindingPattern"/> 
+    /// </remarks>
+    public Node Left { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public Expression Right { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private AssignmentExpression Rewrite(Node left, Expression right)
+    {
+        return new AssignmentExpression(Operator, left, right);
     }
 }

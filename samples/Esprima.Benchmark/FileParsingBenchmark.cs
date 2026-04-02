@@ -1,50 +1,48 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using BenchmarkDotNet.Attributes;
+﻿using BenchmarkDotNet.Attributes;
 
-namespace Esprima.Benchmark
+namespace Esprima.Benchmark;
+
+[MemoryDiagnoser]
+public class FileParsingBenchmark
 {
-    [MemoryDiagnoser]
-    public class FileParsingBenchmark
+    private static readonly Dictionary<string, string> files = new()
     {
-        private static readonly Dictionary<string, string> files = new()
-        {
-            { "underscore-1.5.2", null },
-            { "backbone-1.1.0", null },
-            { "mootools-1.4.5", null },
-            { "jquery-1.9.1", null },
-            { "yui-3.12.0", null },
-            { "jquery.mobile-1.4.2", null },
-            { "angular-1.2.5", null }
-        };
+        { "underscore-1.5.2", null },
+        { "backbone-1.1.0", null },
+        { "mootools-1.4.5", null },
+        { "jquery-1.9.1", null },
+        { "yui-3.12.0", null },
+        { "jquery.mobile-1.4.2", null },
+        { "angular-1.2.5", null }
+    };
 
-        private static readonly ParserOptions parserOptions = new() { Comment = true, Tokens = true };
+    private JavaScriptParser _parser;
 
-        [GlobalSetup]
-        public void Setup()
+    [GlobalSetup]
+    public void Setup()
+    {
+        foreach (var fileName in files.Keys.ToList())
         {
-            foreach (var fileName in files.Keys.ToList())
-            {
-                files[fileName] = File.ReadAllText($"3rdparty/{fileName}.js");
-            }
+            files[fileName] = File.ReadAllText($"3rdparty/{fileName}.js");
         }
 
-        [ParamsSource(nameof(FileNames))] public string FileName { get; set; }
+        _parser = new JavaScriptParser();
+    }
 
-        public IEnumerable<string> FileNames()
-        {
-            foreach (var entry in files)
-            {
-                yield return entry.Key;
-            }
-        }
+    [ParamsSource(nameof(FileNames))]
+    public string FileName { get; set; }
 
-        [Benchmark]
-        public void ParseProgram()
+    public IEnumerable<string> FileNames()
+    {
+        foreach (var entry in files)
         {
-            var parser = new JavaScriptParser(files[FileName], parserOptions);
-            parser.ParseScript();
+            yield return entry.Key;
         }
+    }
+
+    [Benchmark]
+    public void ParseProgram()
+    {
+        _parser.ParseScript(files[FileName]);
     }
 }

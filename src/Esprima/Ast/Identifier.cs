@@ -1,23 +1,14 @@
-﻿using System.Diagnostics;
-using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode]
+public sealed partial class Identifier : Expression
 {
-    [DebuggerDisplay("{Name,nq}")]
-    public sealed class Identifier : Expression
+    public Identifier(string name) : base(Nodes.Identifier)
     {
-        public readonly string? Name;
-
-        public Identifier(string? name) : base(Nodes.Identifier)
-        {
-            Name = name;
-        }
-
-        public override NodeCollection ChildNodes => NodeCollection.Empty;
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitIdentifier(this);
-        }
+        Name = name;
     }
+
+    public string Name { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 }

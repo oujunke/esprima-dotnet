@@ -1,31 +1,32 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
+using Esprima.Utils;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+/// <remarks>
+/// <see cref="ArrowParameterPlaceHolder"/> nodes never appear in the final AST, only used during its construction.
+/// </remarks>
+internal sealed class ArrowParameterPlaceHolder : Expression
 {
-    public sealed class ArrowParameterPlaceHolder : Expression
+    public const Nodes NodeType = (Nodes) int.MinValue;
+
+    public static readonly ArrowParameterPlaceHolder Empty = new(new NodeList<Node>(), false);
+
+    private readonly NodeList<Node> _params;
+
+    public ArrowParameterPlaceHolder(
+        in NodeList<Node> parameters,
+        bool async) :
+        base(NodeType)
     {
-        public static readonly ArrowParameterPlaceHolder Empty = new(new NodeList<Expression>(), false);
-
-        private readonly NodeList<Expression> _params;
-
-        public ArrowParameterPlaceHolder(
-            in NodeList<Expression> parameters,
-            bool async) :
-            base(Nodes.ArrowParameterPlaceHolder)
-        {
-            Async = async;
-            _params = parameters;
-        }
-
-        public ref readonly NodeList<Expression> Params => ref _params;
-
-        public bool Async { get; }
-
-        public override NodeCollection ChildNodes => GenericChildNodeYield.Yield(_params);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitArrowParameterPlaceHolder(this);
-        }
+        Async = async;
+        _params = parameters;
     }
+
+    public bool Async { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public ref readonly NodeList<Node> Params { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => ref _params; }
+
+    internal override Node? NextChildNode(ref ChildNodes.Enumerator enumerator) => enumerator.MoveNext(Params);
+
+    protected internal override object? Accept(AstVisitor visitor) => throw new NotSupportedException();
 }

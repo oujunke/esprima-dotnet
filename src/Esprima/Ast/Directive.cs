@@ -1,12 +1,18 @@
-﻿namespace Esprima.Ast
-{
-    public sealed class Directive : ExpressionStatement
-    {
-        public readonly string Directiv;
+﻿using System.Runtime.CompilerServices;
 
-        public Directive(Expression expression, string directive) : base(expression)
-        {
-            Directiv = directive;
-        }
+namespace Esprima.Ast;
+
+public sealed class Directive : ExpressionStatement
+{
+    public Directive(Expression expression, string value) : base(expression)
+    {
+        Value = value;
+    }
+
+    public string Value { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+
+    protected override ExpressionStatement Rewrite(Expression expression)
+    {
+        return new Directive(expression, Value);
     }
 }

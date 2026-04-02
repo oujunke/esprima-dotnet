@@ -1,29 +1,28 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Block), nameof(Handler), nameof(Finalizer) })]
+public sealed partial class TryStatement : Statement
 {
-    public sealed class TryStatement : Statement
+    public TryStatement(
+        BlockStatement block,
+        CatchClause? handler,
+        BlockStatement? finalizer) :
+        base(Nodes.TryStatement)
     {
-        public readonly Statement Block;
-        public readonly CatchClause? Handler;
-        public readonly Statement? Finalizer;
+        Block = block;
+        Handler = handler;
+        Finalizer = finalizer;
+    }
 
-        public TryStatement(
-            Statement block,
-            CatchClause? handler,
-            Statement? finalizer) :
-            base(Nodes.TryStatement)
-        {
-            Block = block;
-            Handler = handler;
-            Finalizer = finalizer;
-        }
+    public BlockStatement Block { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public CatchClause? Handler { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public BlockStatement? Finalizer { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override NodeCollection ChildNodes => new(Block, Handler, Finalizer);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitTryStatement(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static TryStatement Rewrite(BlockStatement block, CatchClause? handler, BlockStatement? finalizer)
+    {
+        return new TryStatement(block, handler, finalizer);
     }
 }

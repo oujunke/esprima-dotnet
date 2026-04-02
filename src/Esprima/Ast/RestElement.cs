@@ -1,25 +1,23 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Argument) })]
+public sealed partial class RestElement : Node
 {
-    public sealed class RestElement : Expression
+    public RestElement(Node argument) : base(Nodes.RestElement)
     {
-        // Identifier in esprima but not forced and
-        // for instance ...i[0] is a SpreadElement
-        // which is reinterpreted to RestElement with a ComputerMemberExpression
+        Argument = argument;
+    }
 
-        public readonly Expression Argument; // BindingIdentifier | BindingPattern
+    /// <remarks>
+    /// <see cref="Identifier"/> | <see cref="MemberExpression"/> (in assignment contexts only) | <see cref="BindingPattern"/>
+    /// </remarks>
+    public Node Argument { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public RestElement(Expression argument) : base(Nodes.RestElement)
-        {
-            Argument = argument;
-        }
-
-        public override NodeCollection ChildNodes => new(Argument);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitRestElement(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static RestElement Rewrite(Node argument)
+    {
+        return new RestElement(argument);
     }
 }

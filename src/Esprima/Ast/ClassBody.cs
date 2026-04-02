@@ -1,23 +1,25 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Body) })]
+public sealed partial class ClassBody : Node
 {
-    public sealed class ClassBody : Node
+    private readonly NodeList<ClassElement> _body;
+
+    public ClassBody(in NodeList<ClassElement> body) : base(Nodes.ClassBody)
     {
-        private readonly NodeList<Node> _body;
+        _body = body;
+    }
 
-        public ClassBody(in NodeList<Node> body) : base(Nodes.ClassBody)
-        {
-            _body = body;
-        }
+    /// <remarks>
+    /// <see cref="MethodDefinition"/> | <see cref="PropertyDefinition"/> | <see cref="StaticBlock"/>
+    /// </remarks>
+    public ref readonly NodeList<ClassElement> Body { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => ref _body; }
 
-        public ref readonly NodeList<Node> Body => ref _body;
-
-        public override NodeCollection ChildNodes => GenericChildNodeYield.Yield(_body);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitClassBody(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ClassBody Rewrite(in NodeList<ClassElement> body)
+    {
+        return new ClassBody(body);
     }
 }

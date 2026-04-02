@@ -1,23 +1,22 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Test), nameof(Body) })]
+public sealed partial class WhileStatement : Statement
 {
-    public sealed class WhileStatement : Statement
+    public WhileStatement(Expression test, Statement body) : base(Nodes.WhileStatement)
     {
-        public readonly Expression Test;
-        public readonly Statement Body;
+        Test = test;
+        Body = body;
+    }
 
-        public WhileStatement(Expression test, Statement body) : base(Nodes.WhileStatement)
-        {
-            Test = test;
-            Body = body;
-        }
+    public Expression Test { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public Statement Body { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override NodeCollection ChildNodes => new(Test, Body);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitWhileStatement(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static WhileStatement Rewrite(Expression test, Statement body)
+    {
+        return new WhileStatement(test, body);
     }
 }

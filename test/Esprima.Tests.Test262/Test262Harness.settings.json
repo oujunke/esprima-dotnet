@@ -1,10 +1,13 @@
 {
-  "SuiteGitSha": "08a9fc2b974f83a9835174cede20a7935f126015",
+  "SuiteGitSha": "2060494f280ba89d71a0f51d4ff171bafe476a05",
   //"SuiteDirectory": "//mnt/c/work/test262",
   "TargetPath": "./Generated",
   "Namespace": "Esprima.Tests.Test262",
   "Parallel": true,
-  "ExcludedFeatures": [],
+  "ExcludedFeatures": [
+    "import-assertions",
+    "regexp-v-flag"
+  ],
   "ExcludedFlags": [],
   "ExcludedDirectories": [],
   "ExcludedFiles": [],

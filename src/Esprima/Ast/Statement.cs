@@ -1,11 +1,14 @@
-﻿namespace Esprima.Ast
-{
-    public abstract class Statement : StatementListItem
-    {
-        protected Statement(Nodes type) : base(type)
-        {
-        }
+﻿using System.Runtime.CompilerServices;
 
-        public Identifier? LabelSet { get; internal set; }
+namespace Esprima.Ast;
+
+public abstract class Statement : StatementListItem
+{
+    internal Identifier? _labelSet;
+
+    protected Statement(Nodes type) : base(type)
+    {
     }
+
+    public Identifier? LabelSet { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => _labelSet; }
 }

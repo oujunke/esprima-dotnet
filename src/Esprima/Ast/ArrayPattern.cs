@@ -1,23 +1,25 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Elements) })]
+public sealed partial class ArrayPattern : BindingPattern
 {
-    public sealed class ArrayPattern : BindingPattern
+    private readonly NodeList<Node?> _elements;
+
+    public ArrayPattern(in NodeList<Node?> elements) : base(Nodes.ArrayPattern)
     {
-        private readonly NodeList<Expression?> _elements;
+        _elements = elements;
+    }
 
-        public ArrayPattern(in NodeList<Expression?> elements) : base(Nodes.ArrayPattern)
-        {
-            _elements = elements;
-        }
+    /// <summary>
+    /// { <see cref="Identifier"/> | <see cref="MemberExpression"/> (in assignment contexts only) | <see cref="BindingPattern"/> | <see cref="AssignmentPattern"/> | <see cref="RestElement"/> | <see langword="null"/> (omitted element) }
+    /// </summary>
+    public ref readonly NodeList<Node?> Elements { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => ref _elements; }
 
-        public ref readonly NodeList<Expression?> Elements => ref _elements;
-
-        public override NodeCollection ChildNodes => GenericChildNodeYield.Yield<Expression>(_elements!);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitArrayPattern(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ArrayPattern Rewrite(in NodeList<Node?> elements)
+    {
+        return new ArrayPattern(elements);
     }
 }

@@ -1,33 +1,34 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Init), nameof(Test), nameof(Update), nameof(Body) })]
+public sealed partial class ForStatement : Statement
 {
-    public sealed class ForStatement : Statement
+    public ForStatement(
+        StatementListItem? init,
+        Expression? test,
+        Expression? update,
+        Statement body)
+        : base(Nodes.ForStatement)
     {
-        // can be a Statement (var i) or an Expression (i=0)
-        public readonly StatementListItem? Init;
-        public readonly Expression? Test;
-        public readonly Expression? Update;
-        public readonly Statement Body;
+        Init = init;
+        Test = test;
+        Update = update;
+        Body = body;
+    }
 
-        public ForStatement(
-            StatementListItem? init,
-            Expression? test,
-            Expression? update,
-            Statement body)
-            : base(Nodes.ForStatement)
-        {
-            Init = init;
-            Test = test;
-            Update = update;
-            Body = body;
-        }
+    /// <remarks>
+    /// <see cref="VariableDeclaration"/> (var i) | <see cref="Expression"/> (i=0)
+    /// </remarks>
+    public StatementListItem? Init { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public Expression? Test { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public Expression? Update { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public Statement Body { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override NodeCollection ChildNodes => new(Init, Test, Update, Body);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitForStatement(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ForStatement Rewrite(StatementListItem? init, Expression? test, Expression? update, Statement body)
+    {
+        return new ForStatement(init, test, update, body);
     }
 }

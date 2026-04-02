@@ -1,23 +1,22 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Meta), nameof(Property) })]
+public sealed partial class MetaProperty : Expression
 {
-    public sealed class MetaProperty : Expression
+    public MetaProperty(Identifier meta, Identifier property) : base(Nodes.MetaProperty)
     {
-        public readonly Identifier Meta;
-        public readonly Identifier Property;
+        Meta = meta;
+        Property = property;
+    }
 
-        public MetaProperty(Identifier meta, Identifier property) : base(Nodes.MetaProperty)
-        {
-            Meta = meta;
-            Property = property;
-        }
+    public Identifier Meta { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public Identifier Property { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override NodeCollection ChildNodes => new(Meta, Property);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitMetaProperty(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static MetaProperty Rewrite(Identifier meta, Identifier property)
+    {
+        return new MetaProperty(meta, property);
     }
 }

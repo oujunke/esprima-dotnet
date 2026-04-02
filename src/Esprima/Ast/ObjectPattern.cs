@@ -1,23 +1,25 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Properties) })]
+public sealed partial class ObjectPattern : BindingPattern
 {
-    public sealed class ObjectPattern : BindingPattern
+    private readonly NodeList<Node> _properties;
+
+    public ObjectPattern(in NodeList<Node> properties) : base(Nodes.ObjectPattern)
     {
-        private readonly NodeList<Node> _properties;
+        _properties = properties;
+    }
 
-        public ObjectPattern(in NodeList<Node> properties) : base(Nodes.ObjectPattern)
-        {
-            _properties = properties;
-        }
+    /// <summary>
+    /// { <see cref="Property"/> | <see cref="RestElement"/> }
+    /// </summary>
+    public ref readonly NodeList<Node> Properties { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => ref _properties; }
 
-        public ref readonly NodeList<Node> Properties => ref _properties;
-
-        public override NodeCollection ChildNodes => GenericChildNodeYield.Yield(_properties);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitObjectPattern(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ObjectPattern Rewrite(in NodeList<Node> properties)
+    {
+        return new ObjectPattern(properties);
     }
 }

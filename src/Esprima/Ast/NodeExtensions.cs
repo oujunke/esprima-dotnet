@@ -1,50 +1,75 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
-using static Esprima.EsprimaExceptionHelper;
+﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using NodeSysList = System.Collections.Generic.List<Esprima.Ast.Node>;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+public static class NodeExtensions
 {
-    public static class NodeExtensions
+    [DebuggerStepThrough]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T As<T>(this Node node) where T : Node
     {
-        [DebuggerStepThrough]
-        public static T As<T>(this Node node) where T : Node
+        return (T) node;
+    }
+
+    public static IEnumerable<Node> DescendantNodesAndSelf(this Node node)
+    {
+        if (node is null)
         {
-            return (T) node;
+            throw new ArgumentNullException(nameof(node));
         }
 
-        public static IEnumerable<Node> DescendantNodesAndSelf(this Node node)
+        return Impl(node);
+
+        static IEnumerable<Node> Impl(Node node)
         {
-            if (node == null)
+            var nodes = new NodeSysList(1) { node };
+            do
             {
-                return ThrowArgumentNullException<IEnumerable<Node>>(nameof(node));
-            }
+                var lastIndex = nodes.Count - 1;
 
-            return DescendantNodes(new NodeSysList { node });
-        }
+                node = nodes[lastIndex];
+                nodes.RemoveAt(lastIndex);
 
-        public static IEnumerable<Node> DescendantNodes(this Node node)
-        {
-            if (node == null)
-            {
-                return ThrowArgumentNullException<IEnumerable<Node>>(nameof(node));
-            }
-
-            return DescendantNodes(new NodeSysList(node.ChildNodes));
-        }
-
-        private static IEnumerable<Node> DescendantNodes(NodeSysList nodes)
-        {
-            while (nodes.Count > 0)
-            {
-                var node = nodes[0];
-                nodes.RemoveAt(0);
                 yield return node;
-                nodes.InsertRange(0, node.ChildNodes);
+
+                foreach (var childNode in node.ChildNodes)
+                {
+                    nodes.Add(childNode);
+                }
+
+                nodes.Reverse(lastIndex, nodes.Count - lastIndex);
             }
+            while (nodes.Count > 0);
+        }
+    }
+
+    public static IEnumerable<Node> DescendantNodes(this Node node)
+    {
+        return DescendantNodesAndSelf(node).Skip(1);
+    }
+
+    public static IEnumerable<Node> AncestorNodesAndSelf(this Node node, Node rootNode)
+    {
+        if (node is null)
+        {
+            throw new ArgumentNullException(nameof(node));
         }
 
-        public static IEnumerable<Node> AncestorNodesAndSelf(this Node node, Node rootNode)
+        if (rootNode is null)
+        {
+            throw new ArgumentNullException(nameof(rootNode));
+        }
+
+        if (node == rootNode)
+        {
+            return new[] { node };
+        }
+
+        return Impl(node, rootNode);
+
+        static IEnumerable<Node> Impl(Node node, Node rootNode)
         {
             using (var ancestor = node.AncestorNodes(rootNode).GetEnumerator())
             {
@@ -55,46 +80,52 @@ namespace Esprima.Ast
                     do
                     {
                         yield return ancestor.Current;
-                    } while (ancestor.MoveNext());
+                    }
+                    while (ancestor.MoveNext());
                 }
             }
         }
+    }
 
-        public static IEnumerable<Node> AncestorNodes(this Node node, Node rootNode)
+    public static IEnumerable<Node> AncestorNodes(this Node node, Node rootNode)
+    {
+        if (node is null)
         {
-            if (node == null)
-            {
-                return ThrowArgumentNullException<IEnumerable<Node>>(nameof(node));
-            }
+            throw new ArgumentNullException(nameof(node));
+        }
 
-            if (rootNode == null)
-            {
-                return ThrowArgumentNullException<IEnumerable<Node>>(nameof(rootNode));
-            }
+        if (rootNode is null)
+        {
+            throw new ArgumentNullException(nameof(rootNode));
+        }
 
-            var parents = new Stack<Node>();
-            Search(rootNode);
-            return parents;
+        if (node == rootNode)
+        {
+            return Enumerable.Empty<Node>();
+        }
 
-            bool Search(Node aNode)
+        var parents = new Stack<Node>();
+        Search(rootNode, node, parents);
+        return parents;
+
+        static bool Search(Node aNode, Node targetNode, Stack<Node> parents)
+        {
+            parents.Push(aNode);
+            foreach (var childNode in aNode.ChildNodes)
             {
-                parents.Push(aNode);
-                foreach (var childNode in aNode.ChildNodes)
+                if (childNode == targetNode)
                 {
-                    if (childNode == node)
-                    {
-                        return true;
-                    }
-
-                    if (Search(childNode))
-                    {
-                        return true;
-                    }
+                    return true;
                 }
 
-                parents.Pop();
-                return false;
+                if (Search(childNode, targetNode, parents))
+                {
+                    return true;
+                }
             }
+
+            parents.Pop();
+            return false;
         }
     }
 }

@@ -1,23 +1,27 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Left), nameof(Right) })]
+public sealed partial class AssignmentPattern : Node
 {
-    public sealed class AssignmentPattern : Expression
+    internal Expression _right;
+
+    public AssignmentPattern(Node left, Expression right) : base(Nodes.AssignmentPattern)
     {
-        public readonly Expression Left;
-        public Expression Right;
+        Left = left;
+        _right = right;
+    }
 
-        public AssignmentPattern(Expression left, Expression right) : base(Nodes.AssignmentPattern)
-        {
-            Left = left;
-            Right = right;
-        }
+    /// <summary>
+    /// <see cref="Identifier"/> | <see cref="MemberExpression"/> (in assignment contexts only) | <see cref="BindingPattern"/>
+    /// </summary>
+    public Node Left { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public Expression Right { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => _right; }
 
-        public override NodeCollection ChildNodes => new(Left, Right);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitAssignmentPattern(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static AssignmentPattern Rewrite(Node left, Expression right)
+    {
+        return new AssignmentPattern(left, right);
     }
 }

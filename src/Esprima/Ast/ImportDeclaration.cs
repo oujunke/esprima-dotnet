@@ -1,29 +1,31 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Specifiers), nameof(Source), nameof(Attributes) })]
+public sealed partial class ImportDeclaration : Declaration
 {
-    public sealed class ImportDeclaration : Declaration
+    private readonly NodeList<ImportDeclarationSpecifier> _specifiers;
+    private readonly NodeList<ImportAttribute> _attributes;
+
+    public ImportDeclaration(
+        in NodeList<ImportDeclarationSpecifier> specifiers,
+        Literal source,
+        in NodeList<ImportAttribute> attributes)
+        : base(Nodes.ImportDeclaration)
     {
-        private readonly NodeList<ImportDeclarationSpecifier> _specifiers;
+        _specifiers = specifiers;
+        Source = source;
+        _attributes = attributes;
+    }
 
-        public readonly Literal Source;
+    public ref readonly NodeList<ImportDeclarationSpecifier> Specifiers { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => ref _specifiers; }
+    public Literal Source { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public ref readonly NodeList<ImportAttribute> Attributes { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => ref _attributes; }
 
-        public ImportDeclaration(
-            in NodeList<ImportDeclarationSpecifier> specifiers,
-            Literal source)
-            : base(Nodes.ImportDeclaration)
-        {
-            _specifiers = specifiers;
-            Source = source;
-        }
-
-        public ref readonly NodeList<ImportDeclarationSpecifier> Specifiers => ref _specifiers;
-
-        public override NodeCollection ChildNodes => GenericChildNodeYield.Yield(_specifiers, Source);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitImportDeclaration(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ImportDeclaration Rewrite(in NodeList<ImportDeclarationSpecifier> specifiers, Literal source, in NodeList<ImportAttribute> attributes)
+    {
+        return new ImportDeclaration(specifiers, source, attributes);
     }
 }

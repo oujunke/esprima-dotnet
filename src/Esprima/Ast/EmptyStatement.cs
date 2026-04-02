@@ -1,18 +1,9 @@
-﻿using Esprima.Utils;
+﻿namespace Esprima.Ast;
 
-namespace Esprima.Ast
+[VisitableNode]
+public sealed partial class EmptyStatement : Statement
 {
-    public sealed class EmptyStatement : Statement
+    public EmptyStatement() : base(Nodes.EmptyStatement)
     {
-        public EmptyStatement() : base(Nodes.EmptyStatement)
-        {
-        }
-
-        public override NodeCollection ChildNodes => NodeCollection.Empty;
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitEmptyStatement(this);
-        }
     }
 }

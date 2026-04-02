@@ -1,23 +1,22 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Object), nameof(Body) })]
+public sealed partial class WithStatement : Statement
 {
-    public sealed class WithStatement : Statement
+    public WithStatement(Expression obj, Statement body) : base(Nodes.WithStatement)
     {
-        public readonly Expression Object;
-        public readonly Statement Body;
+        Object = obj;
+        Body = body;
+    }
 
-        public WithStatement(Expression obj, Statement body) : base(Nodes.WithStatement)
-        {
-            Object = obj;
-            Body = body;
-        }
+    public Expression Object { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public Statement Body { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override NodeCollection ChildNodes => new(Object, Body);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitWithStatement(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static WithStatement Rewrite(Expression @object, Statement body)
+    {
+        return new WithStatement(@object, body);
     }
 }

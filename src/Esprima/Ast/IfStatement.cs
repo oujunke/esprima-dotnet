@@ -1,29 +1,28 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Test), nameof(Consequent), nameof(Alternate) })]
+public sealed partial class IfStatement : Statement
 {
-    public sealed class IfStatement : Statement
+    public IfStatement(
+        Expression test,
+        Statement consequent,
+        Statement? alternate)
+        : base(Nodes.IfStatement)
     {
-        public readonly Expression Test;
-        public readonly Statement Consequent;
-        public readonly Statement? Alternate;
+        Test = test;
+        Consequent = consequent;
+        Alternate = alternate;
+    }
 
-        public IfStatement(
-            Expression test,
-            Statement consequent,
-            Statement? alternate)
-            : base(Nodes.IfStatement)
-        {
-            Test = test;
-            Consequent = consequent;
-            Alternate = alternate;
-        }
+    public Expression Test { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public Statement Consequent { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public Statement? Alternate { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override NodeCollection ChildNodes => new(Test, Consequent, Alternate);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitIfStatement(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static IfStatement Rewrite(Expression test, Statement consequent, Statement? alternate)
+    {
+        return new IfStatement(test, consequent, alternate);
     }
 }

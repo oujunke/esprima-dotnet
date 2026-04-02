@@ -1,0 +1,24 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+
+    <Copyright>Sebastien Ros</Copyright>
+    <Authors>Sebastien Ros</Authors>
+
+    <LangVersion>11</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <DebugType>portable</DebugType>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+
+  </PropertyGroup>
+
+</Project>

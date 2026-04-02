@@ -1,21 +1,20 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Label) })]
+public sealed partial class BreakStatement : Statement
 {
-    public sealed class BreakStatement : Statement
+    public BreakStatement(Identifier? label) : base(Nodes.BreakStatement)
     {
-        public readonly Identifier? Label;
+        Label = label;
+    }
 
-        public BreakStatement(Identifier? label) : base(Nodes.BreakStatement)
-        {
-            Label = label;
-        }
+    public Identifier? Label { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override NodeCollection ChildNodes => new(Label);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitBreakStatement(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static BreakStatement Rewrite(Identifier? label)
+    {
+        return new BreakStatement(label);
     }
 }

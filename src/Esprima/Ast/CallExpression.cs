@@ -1,31 +1,29 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Callee), nameof(Arguments) })]
+public sealed partial class CallExpression : Expression
 {
-    public sealed class CallExpression : Expression
+    private readonly NodeList<Expression> _arguments;
+
+    public CallExpression(
+        Expression callee,
+        in NodeList<Expression> args,
+        bool optional) : base(Nodes.CallExpression)
     {
-        private readonly NodeList<Expression> _arguments;
+        Callee = callee;
+        _arguments = args;
+        Optional = optional;
+    }
 
-        public readonly Expression Callee;
-        public readonly bool Optional;
+    public Expression Callee { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public ref readonly NodeList<Expression> Arguments { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => ref _arguments; }
+    public bool Optional { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public CallExpression(
-            Expression callee,
-            in NodeList<Expression> args,
-            bool optional) : base(Nodes.CallExpression)
-        {
-            Callee = callee;
-            _arguments = args;
-            Optional = optional;
-        }
-
-        public ref readonly NodeList<Expression> Arguments => ref _arguments;
-
-        public override NodeCollection ChildNodes => GenericChildNodeYield.Yield(Callee, _arguments);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitCallExpression(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private CallExpression Rewrite(Expression callee, in NodeList<Expression> arguments)
+    {
+        return new CallExpression(callee, arguments, Optional);
     }
 }

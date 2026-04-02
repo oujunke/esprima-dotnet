@@ -1,23 +1,22 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Argument) })]
+public sealed partial class YieldExpression : Expression
 {
-    public sealed class YieldExpression : Expression
+    public YieldExpression(Expression? argument, bool @delegate) : base(Nodes.YieldExpression)
     {
-        public readonly Expression? Argument;
-        public readonly bool Delegate;
+        Argument = argument;
+        Delegate = @delegate;
+    }
 
-        public YieldExpression(Expression? argument, bool delgate) : base(Nodes.YieldExpression)
-        {
-            Argument = argument;
-            Delegate = delgate;
-        }
+    public Expression? Argument { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public bool Delegate { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override NodeCollection ChildNodes => new(Argument);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitYieldExpression(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private YieldExpression Rewrite(Expression? argument)
+    {
+        return new YieldExpression(argument, Delegate);
     }
 }

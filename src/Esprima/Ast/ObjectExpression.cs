@@ -1,23 +1,25 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Properties) })]
+public sealed partial class ObjectExpression : Expression
 {
-    public sealed class ObjectExpression : Expression
+    private readonly NodeList<Node> _properties;
+
+    public ObjectExpression(in NodeList<Node> properties) : base(Nodes.ObjectExpression)
     {
-        private readonly NodeList<Expression> _properties;
+        _properties = properties;
+    }
 
-        public ObjectExpression(in NodeList<Expression> properties) : base(Nodes.ObjectExpression)
-        {
-            _properties = properties;
-        }
+    /// <summary>
+    /// { <see cref="Property"/> | <see cref="SpreadElement"/> }
+    /// </summary>
+    public ref readonly NodeList<Node> Properties { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => ref _properties; }
 
-        public ref readonly NodeList<Expression> Properties => ref _properties;
-
-        public override NodeCollection ChildNodes => GenericChildNodeYield.Yield(_properties);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitObjectExpression(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ObjectExpression Rewrite(in NodeList<Node> properties)
+    {
+        return new ObjectExpression(properties);
     }
 }

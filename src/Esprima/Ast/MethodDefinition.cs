@@ -1,29 +1,35 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Decorators), nameof(Key), nameof(Value) })]
+public sealed partial class MethodDefinition : ClassProperty
 {
-    public sealed class MethodDefinition : ClassProperty
+    private readonly NodeList<Decorator> _decorators;
+
+    public MethodDefinition(
+        Expression key,
+        bool computed,
+        FunctionExpression value,
+        PropertyKind kind,
+        bool isStatic,
+        in NodeList<Decorator> decorators)
+        : base(Nodes.MethodDefinition, kind, key, computed)
     {
-        public readonly bool Static;
+        Value = value;
+        Static = isStatic;
+        _decorators = decorators;
+    }
 
-        public MethodDefinition(
-            Expression key,
-            bool computed,
-            FunctionExpression value,
-            PropertyKind kind,
-            bool isStatic)
-            : base(Nodes.MethodDefinition)
-        {
-            Static = isStatic;
-            Key = key;
-            Computed = computed;
-            Value = value;
-            Kind = kind;
-        }
+    public new FunctionExpression Value { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    protected override Expression? GetValue() => Value;
 
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitMethodDefinition(this);
-        }
+    public bool Static { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public ref readonly NodeList<Decorator> Decorators { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => ref _decorators; }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private MethodDefinition Rewrite(in NodeList<Decorator> decorators, Expression key, FunctionExpression value)
+    {
+        return new MethodDefinition(key, Computed, value, Kind, Static, decorators);
     }
 }

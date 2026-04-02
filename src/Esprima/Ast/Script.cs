@@ -1,23 +1,22 @@
-﻿namespace Esprima.Ast
+﻿using System.Runtime.CompilerServices;
+
+namespace Esprima.Ast;
+
+public sealed class Script : Program
 {
-    public sealed class Script : Program
+    public Script(
+        in NodeList<Statement> body,
+        bool strict)
+        : base(body)
     {
-        private readonly NodeList<Statement> _body;
+        Strict = strict;
+    }
 
-        public Script(
-            in NodeList<Statement> body,
-            bool strict)
-            : base(Nodes.Program)
-        {
-            _body = body;
-            Strict = strict;
-        }
+    public override SourceType SourceType => SourceType.Script;
+    public override bool Strict { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override SourceType SourceType => SourceType.Script;
-        public bool Strict { get; }
-
-        public override ref readonly NodeList<Statement> Body => ref _body;
-
-        public override NodeCollection ChildNodes => GenericChildNodeYield.Yield(Body);
+    protected override Program Rewrite(in NodeList<Statement> body)
+    {
+        return new Script(body, Strict);
     }
 }

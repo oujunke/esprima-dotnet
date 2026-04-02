@@ -1,21 +1,20 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Argument) })]
+public sealed partial class SpreadElement : Expression
 {
-    public sealed class SpreadElement : Expression
+    public SpreadElement(Expression argument) : base(Nodes.SpreadElement)
     {
-        public readonly Expression Argument;
+        Argument = argument;
+    }
 
-        public SpreadElement(Expression argument) : base(Nodes.SpreadElement)
-        {
-            Argument = argument;
-        }
+    public Expression Argument { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override NodeCollection ChildNodes => new(Argument);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitSpreadElement(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static SpreadElement Rewrite(Expression argument)
+    {
+        return new SpreadElement(argument);
     }
 }

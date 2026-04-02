@@ -1,32 +1,37 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Declaration), nameof(Specifiers), nameof(Source), nameof(Attributes) })]
+public sealed partial class ExportNamedDeclaration : ExportDeclaration
 {
-    public sealed class ExportNamedDeclaration : ExportDeclaration
+    private readonly NodeList<ExportSpecifier> _specifiers;
+    private readonly NodeList<ImportAttribute> _attributes;
+
+    public ExportNamedDeclaration(
+        Declaration? declaration,
+        in NodeList<ExportSpecifier> specifiers,
+        Literal? source,
+        in NodeList<ImportAttribute> attributes)
+        : base(Nodes.ExportNamedDeclaration)
     {
-        private readonly NodeList<ExportSpecifier> _specifiers;
+        Declaration = declaration;
+        _specifiers = specifiers;
+        Source = source;
+        _attributes = attributes;
+    }
 
-        public readonly StatementListItem? Declaration;
-        public readonly Literal? Source;
+    /// <remarks>
+    /// <see cref="VariableDeclaration"/> | <see cref="ClassDeclaration"/> | <see cref="FunctionDeclaration"/>
+    /// </remarks>
+    public Declaration? Declaration { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public ref readonly NodeList<ExportSpecifier> Specifiers { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => ref _specifiers; }
+    public Literal? Source { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public ref readonly NodeList<ImportAttribute> Attributes { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => ref _attributes; }
 
-        public ExportNamedDeclaration(
-            StatementListItem? declaration,
-            in NodeList<ExportSpecifier> specifiers,
-            Literal? source)
-            : base(Nodes.ExportNamedDeclaration)
-        {
-            Declaration = declaration;
-            _specifiers = specifiers;
-            Source = source;
-        }
-
-        public ref readonly NodeList<ExportSpecifier> Specifiers => ref _specifiers;
-
-        public override NodeCollection ChildNodes => GenericChildNodeYield.Yield(Declaration, _specifiers, Source);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitExportNamedDeclaration(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ExportNamedDeclaration Rewrite(Declaration? declaration, in NodeList<ExportSpecifier> specifiers, Literal? source, in NodeList<ImportAttribute> attributes)
+    {
+        return new ExportNamedDeclaration(declaration, specifiers, source, attributes);
     }
 }

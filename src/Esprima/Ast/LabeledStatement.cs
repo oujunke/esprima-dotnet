@@ -1,24 +1,23 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Label), nameof(Body) })]
+public sealed partial class LabeledStatement : Statement
 {
-    public sealed class LabeledStatement : Statement
+    public LabeledStatement(Identifier label, Statement body) : base(Nodes.LabeledStatement)
     {
-        public readonly Identifier Label;
-        public readonly Statement Body;
+        Label = label;
+        Body = body;
+        body._labelSet = label;
+    }
 
-        public LabeledStatement(Identifier label, Statement body) : base(Nodes.LabeledStatement)
-        {
-            Label = label;
-            Body = body;
-            body.LabelSet = label;
-        }
+    public Identifier Label { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public Statement Body { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override NodeCollection ChildNodes => new(Label, Body);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitLabeledStatement(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static LabeledStatement Rewrite(Identifier label, Statement body)
+    {
+        return new LabeledStatement(label, body);
     }
 }

@@ -1,17 +1,16 @@
-﻿namespace Esprima.Ast
+﻿namespace Esprima.Ast;
+
+public sealed class Module : Program
 {
-    public sealed class Module : Program
+    public Module(in NodeList<Statement> body) : base(body)
     {
-        private readonly NodeList<Statement> _body;
-        public override SourceType SourceType => SourceType.Module;
+    }
 
-        public Module(in NodeList<Statement> body) : base(Nodes.Program)
-        {
-            _body = body;
-        }
+    public override SourceType SourceType => SourceType.Module;
+    public override bool Strict => true;
 
-        public override ref readonly NodeList<Statement> Body => ref _body;
-
-        public override NodeCollection ChildNodes => GenericChildNodeYield.Yield(Body);
+    protected override Program Rewrite(in NodeList<Statement> body)
+    {
+        return new Module(body);
     }
 }

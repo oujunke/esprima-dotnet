@@ -1,16 +1,22 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Body) })]
+public sealed partial class StaticBlock : ClassElement
 {
-    public sealed class StaticBlock : BlockStatement
-    {
-        public StaticBlock(in NodeList<Statement> body) : base(body, Nodes.StaticBlock)
-        {
-        }
+    private readonly NodeList<Statement> _body;
 
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitStaticBlock(this);
-        }
+    public StaticBlock(in NodeList<Statement> body) : base(Nodes.StaticBlock)
+    {
+        _body = body;
+    }
+
+    public ref readonly NodeList<Statement> Body { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => ref _body; }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static StaticBlock Rewrite(in NodeList<Statement> body)
+    {
+        return new StaticBlock(body);
     }
 }

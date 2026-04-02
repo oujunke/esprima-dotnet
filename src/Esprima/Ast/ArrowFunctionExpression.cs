@@ -1,42 +1,44 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Params), nameof(Body) })]
+public sealed partial class ArrowFunctionExpression : Expression, IFunction
 {
-    public sealed class ArrowFunctionExpression : Expression, IFunction
+    private readonly NodeList<Node> _params;
+
+    public ArrowFunctionExpression(
+        in NodeList<Node> parameters,
+        StatementListItem body,
+        bool expression,
+        bool strict,
+        bool async)
+        : base(Nodes.ArrowFunctionExpression)
     {
-        private readonly NodeList<Expression> _params;
+        _params = parameters;
+        Body = body;
+        Expression = expression;
+        Strict = strict;
+        Async = async;
+    }
 
-        public ArrowFunctionExpression(
-            in NodeList<Expression> parameters,
-            Node body,
-            bool expression,
-            bool strict,
-            bool async)
-            : base(Nodes.ArrowFunctionExpression)
-        {
-            Id = null;
-            _params = parameters;
-            Body = body;
-            Generator = false;
-            Expression = expression;
-            Strict = strict;
-            Async = async;
-        }
+    Identifier? IFunction.Id => null;
+    /// <summary>
+    /// { <see cref="Identifier"/> | <see cref="BindingPattern"/> | <see cref="AssignmentPattern"/> | <see cref="RestElement"/> }
+    /// </summary>
+    public ref readonly NodeList<Node> Params { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => ref _params; }
+    /// <remarks>
+    /// <see cref="BlockStatement"/> | <see cref="Ast.Expression"/>
+    /// </remarks>
+    public StatementListItem Body { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    bool IFunction.Generator => false;
+    public bool Expression { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public bool Strict { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public bool Async { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public Identifier? Id { get; }
-        public Node Body { get; } // : BlockStatement | Expression;
-        public bool Generator { get; }
-        public bool Expression { get; }
-        public bool Strict { get; }
-        public bool Async { get; }
-
-        public ref readonly NodeList<Expression> Params => ref _params;
-
-        public override NodeCollection ChildNodes => GenericChildNodeYield.Yield(Params, Body);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitArrowFunctionExpression(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private ArrowFunctionExpression Rewrite(in NodeList<Node> @params, StatementListItem body)
+    {
+        return new ArrowFunctionExpression(@params, body, Expression, Strict, Async);
     }
 }

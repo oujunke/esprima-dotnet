@@ -1,21 +1,23 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Declaration) })]
+public sealed partial class ExportDefaultDeclaration : ExportDeclaration
 {
-    public sealed class ExportDefaultDeclaration : ExportDeclaration
+    public ExportDefaultDeclaration(StatementListItem declaration) : base(Nodes.ExportDefaultDeclaration)
     {
-        public readonly StatementListItem Declaration; //: BindingIdentifier | BindingPattern | ClassDeclaration | Expression | FunctionDeclaration;
+        Declaration = declaration;
+    }
 
-        public ExportDefaultDeclaration(StatementListItem declaration) : base(Nodes.ExportDefaultDeclaration)
-        {
-            Declaration = declaration;
-        }
+    /// <remarks>
+    /// <see cref="Expression"/> | <see cref="ClassDeclaration"/> | <see cref="FunctionDeclaration"/>
+    /// </remarks>
+    public StatementListItem Declaration { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override NodeCollection ChildNodes => new(Declaration);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitExportDefaultDeclaration(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ExportDefaultDeclaration Rewrite(StatementListItem declaration)
+    {
+        return new ExportDefaultDeclaration(declaration);
     }
 }

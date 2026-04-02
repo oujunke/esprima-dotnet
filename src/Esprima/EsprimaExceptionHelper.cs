@@ -1,42 +1,45 @@
-﻿using System;
+﻿using System.Diagnostics.CodeAnalysis;
 
-namespace Esprima
+namespace Esprima;
+
+/// <remarks>
+/// JIT cannot inline methods that have <see langword="throw"/> in them. These helper methods allow us to work around this.
+/// </remarks>
+internal static class EsprimaExceptionHelper
 {
-    internal static class EsprimaExceptionHelper
+    [DoesNotReturn]
+    public static T ThrowArgumentNullException<T>(string paramName)
     {
-        public static void ThrowIndexOutOfRangeException()
-        {
-            throw new IndexOutOfRangeException();
-        }
+        throw new ArgumentNullException(paramName);
+    }
 
-        public static T ThrowArgumentOutOfRangeException<T>(string paramName, object actualValue, string? message = null)
-        {
-            throw new ArgumentOutOfRangeException(paramName, actualValue, message);
-        }
+    [DoesNotReturn]
+    public static void ThrowArgumentOutOfRangeException<T>(string paramName, T actualValue, string? message = null)
+    {
+        throw new ArgumentOutOfRangeException(paramName, actualValue, message);
+    }
 
-        public static void ThrowArgumentOutOfRangeException(string paramName, object actualValue, string? message = null)
-        {
-            throw new ArgumentOutOfRangeException(paramName, actualValue, message);
-        }
+    [DoesNotReturn]
+    public static void ThrowArgumentException(string message, string paramName)
+    {
+        throw new ArgumentException(message, paramName);
+    }
 
-        public static T ThrowInvalidOperationException<T>(string? message = null)
-        {
-            throw new InvalidOperationException(message);
-        }
+    [DoesNotReturn]
+    public static T ThrowIndexOutOfRangeException<T>()
+    {
+        throw new ArgumentOutOfRangeException("index");
+    }
 
-        public static void ThrowInvalidOperationException(string? message = null)
-        {
-            throw new InvalidOperationException(message);
-        }
+    [DoesNotReturn]
+    public static T ThrowFormatException<T>(string message)
+    {
+        throw new FormatException(message);
+    }
 
-        public static void ThrowArgumentNullException(string message)
-        {
-            throw new ArgumentNullException(message);
-        }
-
-        public static T ThrowArgumentNullException<T>(string message)
-        {
-            throw new ArgumentNullException(message);
-        }
+    [DoesNotReturn]
+    public static T ThrowInvalidOperationException<T>(string? message = null)
+    {
+        throw new InvalidOperationException(message);
     }
 }

@@ -1,26 +1,24 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Discriminant), nameof(Cases) })]
+public sealed partial class SwitchStatement : Statement
 {
-    public sealed class SwitchStatement : Statement
+    private readonly NodeList<SwitchCase> _cases;
+
+    public SwitchStatement(Expression discriminant, in NodeList<SwitchCase> cases) : base(Nodes.SwitchStatement)
     {
-        private readonly NodeList<SwitchCase> _cases;
+        Discriminant = discriminant;
+        _cases = cases;
+    }
 
-        public readonly Expression Discriminant;
+    public Expression Discriminant { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public ref readonly NodeList<SwitchCase> Cases { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => ref _cases; }
 
-        public SwitchStatement(Expression discriminant, in NodeList<SwitchCase> cases) : base(Nodes.SwitchStatement)
-        {
-            Discriminant = discriminant;
-            _cases = cases;
-        }
-
-        public ref readonly NodeList<SwitchCase> Cases => ref _cases;
-
-        public override NodeCollection ChildNodes => GenericChildNodeYield.Yield(Discriminant, _cases);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitSwitchStatement(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static SwitchStatement Rewrite(Expression discriminant, in NodeList<SwitchCase> cases)
+    {
+        return new SwitchStatement(discriminant, cases);
     }
 }

@@ -1,24 +1,26 @@
-﻿using Esprima.Utils;
+﻿using System.Runtime.CompilerServices;
 
-namespace Esprima.Ast
+namespace Esprima.Ast;
+
+[VisitableNode(ChildProperties = new[] { nameof(Id), nameof(Init) })]
+public sealed partial class VariableDeclarator : Node
 {
-    public sealed class VariableDeclarator : Node
+    public VariableDeclarator(Node id, Expression? init) :
+        base(Nodes.VariableDeclarator)
     {
-        public readonly Expression Id; // BindingIdentifier | BindingPattern;
-        public readonly Expression? Init;
+        Id = id;
+        Init = init;
+    }
 
-        public VariableDeclarator(Expression id, Expression? init) :
-            base(Nodes.VariableDeclarator)
-        {
-            Id = id;
-            Init = init;
-        }
+    /// <remarks>
+    /// <see cref="Identifier"/> | <see cref="BindingPattern"/>
+    /// </remarks>
+    public Node Id { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
+    public Expression? Init { [MethodImpl(MethodImplOptions.AggressiveInlining)] get; }
 
-        public override NodeCollection ChildNodes => new(Id, Init);
-
-        protected internal override void Accept(AstVisitor visitor)
-        {
-            visitor.VisitVariableDeclarator(this);
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static VariableDeclarator Rewrite(Node id, Expression? init)
+    {
+        return new VariableDeclarator(id, init);
     }
 }
